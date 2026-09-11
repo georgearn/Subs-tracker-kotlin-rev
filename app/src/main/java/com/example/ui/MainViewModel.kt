@@ -57,15 +57,30 @@ class MainViewModel(
         .map { it ?: "en" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
 
+    val monthlyNotificationEnabled: StateFlow<Boolean> = repository.getMonthlyNotificationEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val cardColors: StateFlow<Map<String, String>> = repository.allCardColors
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    private val _targetTab = MutableStateFlow<com.example.AppTab?>(null)
+    val targetTab: StateFlow<com.example.AppTab?> = _targetTab.asStateFlow()
+
+    fun navigateToTab(tab: com.example.AppTab) {
+        _targetTab.value = tab
+    }
+
+    fun onTabNavigated() {
+        _targetTab.value = null
+    }
 
     init {
         // Trigger notification check
         viewModelScope.launch {
             val subs = repository.getAllSubscriptionsSync()
             val cur = repository.getPrimaryCurrencySync()
-            NotificationHelper.checkAndSendReminders(getApplication(), subs, cur)
+            val monthly = repository.getMonthlyNotificationEnabledSync()
+            NotificationHelper.checkAndSendReminders(getApplication(), subs, cur, monthly)
         }
     }
 
@@ -78,6 +93,20 @@ class MainViewModel(
     fun setUseMaterialAccent(use: Boolean) {
         viewModelScope.launch {
             repository.setUseMaterialAccent(use)
+        }
+    }
+
+    fun setMonthlyNotificationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setMonthlyNotificationEnabled(enabled)
+        }
+    }
+
+    fun sendTestMonthlyNotification() {
+        viewModelScope.launch {
+            val subs = repository.getAllSubscriptionsSync()
+            val cur = repository.getPrimaryCurrencySync()
+            NotificationHelper.sendTestMonthlyNotification(getApplication(), subs, cur)
         }
     }
 

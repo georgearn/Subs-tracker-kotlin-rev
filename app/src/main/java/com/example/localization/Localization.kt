@@ -89,9 +89,13 @@ interface AppStrings {
     val notificationsSectionTitle: String
     val bgServiceActive: String
     val bgServiceSubtitle: String
+    val monthlyNotificationTitle: String
+    val monthlyNotificationSubtitle: String
     val enablePermission: String
     val notificationSent: String
     val testNotificationBtn: String
+    val testMonthlyNotificationBtn: String
+    val monthlyDigestSent: String
     val dataSectionTitle: String
     val backupTitle: String
     fun trackedCountSubtitle(count: Int): String
@@ -199,9 +203,13 @@ class EnglishStrings : AppStrings {
     override val notificationsSectionTitle = "Notifications & Reminders"
     override val bgServiceActive = "Background Service Active"
     override val bgServiceSubtitle = "Daily background alerts notify you of upcoming subscription renewals."
+    override val monthlyNotificationTitle = "Monthly Summary Notification"
+    override val monthlyNotificationSubtitle = "Send a morning digest on the 1st of each month with all upcoming subscriptions and total amount."
     override val enablePermission = "Enable Permission"
     override val notificationSent = "Notification Sent!"
-    override val testNotificationBtn = "Test Notification"
+    override val testNotificationBtn = "Test Daily Alert"
+    override val testMonthlyNotificationBtn = "Test 1st of Month Digest"
+    override val monthlyDigestSent = "Monthly Digest Sent!"
     override val dataSectionTitle = "Data & Backup"
     override val backupTitle = "Backup & Restore"
     override fun trackedCountSubtitle(count: Int) = "$count subscriptions tracked locally"
@@ -379,9 +387,13 @@ class RussianStrings : AppStrings {
     override val notificationsSectionTitle = "Уведомления и напоминания"
     override val bgServiceActive = "Фоновая служба активна"
     override val bgServiceSubtitle = "Ежедневные фоновые оповещения о предстоящих списаниях."
+    override val monthlyNotificationTitle = "Ежемесячный дайджест"
+    override val monthlyNotificationSubtitle = "Утреннее уведомление 1-го числа каждого месяца со списком всех подписок и общей суммой."
     override val enablePermission = "Разрешить уведомления"
     override val notificationSent = "Уведомление отправлено!"
-    override val testNotificationBtn = "Тестовое уведомление"
+    override val testNotificationBtn = "Тест дневного напоминания"
+    override val testMonthlyNotificationBtn = "Тест дайджеста на 1-е число"
+    override val monthlyDigestSent = "Дайджест отправлен!"
     override val dataSectionTitle = "Данные и резервные копии"
     override val backupTitle = "Резервное копирование"
     override fun trackedCountSubtitle(count: Int): String {

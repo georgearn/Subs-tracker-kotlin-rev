@@ -21,8 +21,14 @@ class SubscriptionReminderWorker(
             val repository = SubscriptionRepository(db.subscriptionDao())
             val subscriptions = repository.getAllSubscriptionsSync()
             val currency = repository.getPrimaryCurrencySync()
+            val monthlyEnabled = repository.getMonthlyNotificationEnabledSync()
 
-            NotificationHelper.checkAndSendReminders(applicationContext, subscriptions, currency)
+            NotificationHelper.checkAndSendReminders(
+                applicationContext,
+                subscriptions,
+                currency,
+                monthlyEnabled
+            )
             Result.success()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -34,13 +40,22 @@ class SubscriptionReminderWorker(
         private const val WORK_NAME = "subscription_daily_reminder_work"
 
         fun scheduleDailyReminder(context: Context) {
+            val now = java.time.LocalDateTime.now()
+            var targetTime = now.withHour(9).withMinute(0).withSecond(0).withNano(0)
+            if (now.isAfter(targetTime)) {
+                targetTime = targetTime.plusDays(1)
+            }
+            val initialDelayMinutes = java.time.Duration.between(now, targetTime).toMinutes()
+
             val workRequest = PeriodicWorkRequestBuilder<SubscriptionReminderWorker>(
                 24, TimeUnit.HOURS
-            ).build()
+            )
+                .setInitialDelay(initialDelayMinutes, TimeUnit.MINUTES)
+                .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )
         }

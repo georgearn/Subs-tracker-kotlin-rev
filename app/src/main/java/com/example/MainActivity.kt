@@ -1,6 +1,7 @@
 package com.example
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -81,6 +82,14 @@ enum class AppTab {
 }
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_NAV_TAB = "extra_nav_tab"
+        const val TAB_OVERVIEW = "overview"
+    }
+
+    private var viewModelInstance: MainViewModel? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -89,6 +98,12 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel = viewModel(
                 factory = MainViewModel.provideFactory(application)
             )
+            viewModelInstance = viewModel
+
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                handleIntent(intent)
+            }
+
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val useMaterialAccent by viewModel.useMaterialAccent.collectAsStateWithLifecycle()
 
@@ -98,6 +113,19 @@ class MainActivity : ComponentActivity() {
             ) {
                 MainApp(viewModel = viewModel, themeMode = themeMode, useMaterialAccent = useMaterialAccent)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val target = intent?.getStringExtra(EXTRA_NAV_TAB)
+        if (target == TAB_OVERVIEW) {
+            viewModelInstance?.navigateToTab(AppTab.OVERVIEW)
         }
     }
 }
@@ -116,10 +144,19 @@ fun MainApp(
     val cardColors by viewModel.cardColors.collectAsStateWithLifecycle()
     val currentMonthTotal by viewModel.currentMonthTotal.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
+    val monthlyNotificationEnabled by viewModel.monthlyNotificationEnabled.collectAsStateWithLifecycle()
 
     val strings = remember(appLanguage) { getAppStrings(appLanguage) }
 
     var currentTab by remember { mutableStateOf(AppTab.SUBSCRIPTIONS) }
+    val targetTab by viewModel.targetTab.collectAsStateWithLifecycle()
+
+    LaunchedEffect(targetTab) {
+        targetTab?.let {
+            currentTab = it
+            viewModel.onTabNavigated()
+        }
+    }
     var activeDialogSubscription by remember { mutableStateOf<SubscriptionEntity?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showImportExportDialog by remember { mutableStateOf(false) }
@@ -391,7 +428,10 @@ fun MainApp(
                             onSendTestNotification = { viewModel.sendTestNotification() },
                             subscriptionCount = subscriptions.size,
                             currentLanguage = appLanguage,
-                            onLanguageChange = { viewModel.setAppLanguage(it) }
+                            onLanguageChange = { viewModel.setAppLanguage(it) },
+                            monthlyNotificationEnabled = monthlyNotificationEnabled,
+                            onMonthlyNotificationChange = { viewModel.setMonthlyNotificationEnabled(it) },
+                            onSendTestMonthlyNotification = { viewModel.sendTestMonthlyNotification() }
                         )
                     }
                 }
