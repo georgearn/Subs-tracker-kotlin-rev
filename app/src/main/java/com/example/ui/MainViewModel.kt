@@ -61,6 +61,9 @@ class MainViewModel(
     val monthlyNotificationEnabled: StateFlow<Boolean> = repository.getMonthlyNotificationEnabled()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val dailyNotificationEnabled: StateFlow<Boolean> = repository.getDailyNotificationEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val cardColors: StateFlow<Map<String, String>> = repository.allCardColors
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -81,7 +84,8 @@ class MainViewModel(
             val subs = repository.getAllSubscriptionsSync()
             val cur = repository.getPrimaryCurrencySync()
             val monthly = repository.getMonthlyNotificationEnabledSync()
-            NotificationHelper.checkAndSendReminders(getApplication(), subs, cur, monthly)
+            val daily = repository.getDailyNotificationEnabledSync()
+            NotificationHelper.checkAndSendReminders(getApplication(), subs, cur, monthly, daily)
 
             val systemLang = AppLocaleManager.getSystemAppLanguage(getApplication())
             val savedLang = repository.getAppLanguageSync()
@@ -118,6 +122,12 @@ class MainViewModel(
     fun setMonthlyNotificationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             repository.setMonthlyNotificationEnabled(enabled)
+        }
+    }
+
+    fun setDailyNotificationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setDailyNotificationEnabled(enabled)
         }
     }
 

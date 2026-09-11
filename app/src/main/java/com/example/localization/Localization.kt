@@ -87,6 +87,8 @@ interface AppStrings {
     val searchCurrencyPlaceholder: String
     val close: String
     val notificationsSectionTitle: String
+    val dailyNotificationTitle: String
+    val dailyNotificationSubtitle: String
     val bgServiceActive: String
     val bgServiceSubtitle: String
     val monthlyNotificationTitle: String
@@ -201,6 +203,8 @@ class EnglishStrings : AppStrings {
     override val searchCurrencyPlaceholder = "Search currency (e.g. UAH, USD, €)"
     override val close = "Close"
     override val notificationsSectionTitle = "Notifications & Reminders"
+    override val dailyNotificationTitle = "Daily Payment Reminders"
+    override val dailyNotificationSubtitle = "Notify me on the day subscription payments are due"
     override val bgServiceActive = "Background Service Active"
     override val bgServiceSubtitle = "Daily background alerts notify you of upcoming subscription renewals."
     override val monthlyNotificationTitle = "Monthly Summary Notification"
@@ -385,6 +389,8 @@ class RussianStrings : AppStrings {
     override val searchCurrencyPlaceholder = "Поиск валюты (например: UAH, USD, RUB, EUR)"
     override val close = "Закрыть"
     override val notificationsSectionTitle = "Уведомления и напоминания"
+    override val dailyNotificationTitle = "Ежедневные напоминания"
+    override val dailyNotificationSubtitle = "Оповещать в день списания платежей по подпискам"
     override val bgServiceActive = "Фоновая служба активна"
     override val bgServiceSubtitle = "Ежедневные фоновые оповещения о предстоящих списаниях."
     override val monthlyNotificationTitle = "Ежемесячный дайджест"

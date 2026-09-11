@@ -150,6 +150,7 @@ fun MainApp(
     val currentMonthTotal by viewModel.currentMonthTotal.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val monthlyNotificationEnabled by viewModel.monthlyNotificationEnabled.collectAsStateWithLifecycle()
+    val dailyNotificationEnabled by viewModel.dailyNotificationEnabled.collectAsStateWithLifecycle()
 
     val strings = remember(appLanguage) { getAppStrings(appLanguage) }
 
@@ -430,13 +431,13 @@ fun MainApp(
                             primaryCurrency = primaryCurrency,
                             onCurrencyChange = { viewModel.setPrimaryCurrency(it) },
                             onOpenImportExport = { showImportExportDialog = true },
-                            onSendTestNotification = { viewModel.sendTestNotification() },
                             subscriptionCount = subscriptions.size,
                             currentLanguage = appLanguage,
                             onLanguageChange = { viewModel.setAppLanguage(it) },
+                            dailyNotificationEnabled = dailyNotificationEnabled,
+                            onDailyNotificationChange = { viewModel.setDailyNotificationEnabled(it) },
                             monthlyNotificationEnabled = monthlyNotificationEnabled,
-                            onMonthlyNotificationChange = { viewModel.setMonthlyNotificationEnabled(it) },
-                            onSendTestMonthlyNotification = { viewModel.sendTestMonthlyNotification() }
+                            onMonthlyNotificationChange = { viewModel.setMonthlyNotificationEnabled(it) }
                         )
                     }
                 }

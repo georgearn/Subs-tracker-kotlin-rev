@@ -22,12 +22,14 @@ class SubscriptionReminderWorker(
             val subscriptions = repository.getAllSubscriptionsSync()
             val currency = repository.getPrimaryCurrencySync()
             val monthlyEnabled = repository.getMonthlyNotificationEnabledSync()
+            val dailyEnabled = repository.getDailyNotificationEnabledSync()
 
             NotificationHelper.checkAndSendReminders(
                 applicationContext,
                 subscriptions,
                 currency,
-                monthlyEnabled
+                monthlyEnabled,
+                dailyEnabled
             )
             Result.success()
         } catch (e: Exception) {

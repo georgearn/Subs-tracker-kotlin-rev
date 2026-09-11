@@ -95,21 +95,19 @@ fun SettingsScreen(
     primaryCurrency: String,
     onCurrencyChange: (String) -> Unit,
     onOpenImportExport: () -> Unit,
-    onSendTestNotification: () -> Unit,
     subscriptionCount: Int,
     modifier: Modifier = Modifier,
     currentLanguage: String = "en",
     onLanguageChange: (String) -> Unit = {},
+    dailyNotificationEnabled: Boolean = true,
+    onDailyNotificationChange: (Boolean) -> Unit = {},
     monthlyNotificationEnabled: Boolean = true,
-    onMonthlyNotificationChange: (Boolean) -> Unit = {},
-    onSendTestMonthlyNotification: () -> Unit = {}
+    onMonthlyNotificationChange: (Boolean) -> Unit = {}
 ) {
     val strings = LocalStrings.current
     val context = LocalContext.current
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var currencySearchQuery by remember { mutableStateOf("") }
-    var testNotificationSent by remember { mutableStateOf(false) }
-    var testMonthlySent by remember { mutableStateOf(false) }
 
     val hasNotificationPermission = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -480,6 +478,79 @@ fun SettingsScreen(
                 SectionHeader(title = strings.notificationsSectionTitle, icon = Icons.Default.Notifications)
             }
 
+            // Daily Payment Reminders Toggle Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 12.dp)
+                            ) {
+                                Text(
+                                    text = strings.dailyNotificationTitle,
+                                    color = TextWhite,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = strings.dailyNotificationSubtitle,
+                                    color = TextMuted,
+                                    fontSize = 12.sp
+                                )
+                            }
+
+                            Switch(
+                                checked = dailyNotificationEnabled,
+                                onCheckedChange = { isChecked ->
+                                    if (isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                    onDailyNotificationChange(isChecked)
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Brand,
+                                    uncheckedThumbColor = TextMuted,
+                                    uncheckedTrackColor = CardBgElevated
+                                ),
+                                modifier = Modifier.testTag("daily_notification_switch")
+                            )
+                        }
+
+                        if (dailyNotificationEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Brand),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("enable_notification_permission_btn")
+                            ) {
+                                Text(strings.enablePermission, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Monthly Digest Notification Toggle Card
             item {
                 Card(
@@ -514,7 +585,12 @@ fun SettingsScreen(
 
                             Switch(
                                 checked = monthlyNotificationEnabled,
-                                onCheckedChange = onMonthlyNotificationChange,
+                                onCheckedChange = { isChecked ->
+                                    if (isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                    onMonthlyNotificationChange(isChecked)
+                                },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = Brand,
@@ -525,136 +601,19 @@ fun SettingsScreen(
                             )
                         }
 
-                        if (monthlyNotificationEnabled) {
+                        if (monthlyNotificationEnabled && !dailyNotificationEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
                             Spacer(modifier = Modifier.height(12.dp))
-                            OutlinedButton(
+                            Button(
                                 onClick = {
-                                    onSendTestMonthlyNotification()
-                                    testMonthlySent = true
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 },
-                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Brand),
+                                shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .testTag("send_test_monthly_notification_btn")
+                                    .testTag("enable_notification_permission_btn")
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = if (testMonthlySent) Icons.Default.Check else Icons.Default.Notifications,
-                                        contentDescription = null,
-                                        tint = Brand,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (testMonthlySent) strings.monthlyDigestSent else strings.testMonthlyNotificationBtn,
-                                        color = Brand,
-                                        fontSize = 13.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .clip(CircleShape)
-                                        .background(GreenSuccess)
-                                    )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = strings.bgServiceActive,
-                                    color = GreenSuccess,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(CardBgElevated)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "WorkManager",
-                                    color = TextMuted,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = strings.bgServiceSubtitle,
-                            color = TextMuted,
-                            fontSize = 13.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                Button(
-                                    onClick = {
-                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Brand),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(strings.enablePermission, fontSize = 13.sp)
-                                }
-                            }
-
-                            OutlinedButton(
-                                onClick = {
-                                    onSendTestNotification()
-                                    testNotificationSent = true
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("send_test_notification_btn")
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = if (testNotificationSent) Icons.Default.Check else Icons.Default.Sync,
-                                        contentDescription = null,
-                                        tint = Brand,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (testNotificationSent) strings.notificationSent else strings.testNotificationBtn,
-                                        color = Brand,
-                                        fontSize = 13.sp
-                                    )
-                                }
+                                Text(strings.enablePermission, fontSize = 13.sp)
                             }
                         }
                     }

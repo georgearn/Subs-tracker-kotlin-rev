@@ -52,7 +52,8 @@ object NotificationHelper {
         context: Context,
         subscriptions: List<SubscriptionEntity>,
         currency: String,
-        monthlyEnabled: Boolean = true
+        monthlyEnabled: Boolean = true,
+        dailyEnabled: Boolean = true
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = ContextCompat.checkSelfPermission(
@@ -77,16 +78,18 @@ object NotificationHelper {
             }
         }
 
-        // 2. Daily payment reminder
-        val dailyKey = "${today}:daily"
-        if (!prefs.getBoolean(dailyKey, false)) {
-            val dueToday = subscriptions.filter { sub ->
-                SubscriptionCalculations.occurrencesInMonth(sub, today.year, today.monthValue)
-                    .contains(today)
-            }
-            if (dueToday.isNotEmpty()) {
-                sendDailyNotification(context, dueToday, currency)
-                prefs.edit().putBoolean(dailyKey, true).apply()
+        // 2. Daily payment reminder (if toggle enabled)
+        if (dailyEnabled) {
+            val dailyKey = "${today}:daily"
+            if (!prefs.getBoolean(dailyKey, false)) {
+                val dueToday = subscriptions.filter { sub ->
+                    SubscriptionCalculations.occurrencesInMonth(sub, today.year, today.monthValue)
+                        .contains(today)
+                }
+                if (dueToday.isNotEmpty()) {
+                    sendDailyNotification(context, dueToday, currency)
+                    prefs.edit().putBoolean(dailyKey, true).apply()
+                }
             }
         }
     }

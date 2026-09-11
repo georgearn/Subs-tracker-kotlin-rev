@@ -73,6 +73,14 @@ class SubscriptionRepository(private val dao: SubscriptionDao) {
         dao.setSetting(SettingEntity(key = "monthly_notification_enabled", value = enabled.toString()))
     }
 
+    fun getDailyNotificationEnabled(): Flow<Boolean> = dao.getSetting("daily_notification_enabled").map {
+        it?.toBooleanStrictOrNull() ?: true
+    }
+
+    suspend fun setDailyNotificationEnabled(enabled: Boolean) {
+        dao.setSetting(SettingEntity(key = "daily_notification_enabled", value = enabled.toString()))
+    }
+
     suspend fun insertSubscription(subscription: SubscriptionEntity): Long {
         return dao.insertSubscription(subscription)
     }
@@ -103,6 +111,10 @@ class SubscriptionRepository(private val dao: SubscriptionDao) {
 
     suspend fun getMonthlyNotificationEnabledSync(): Boolean {
         return dao.getSettingSync("monthly_notification_enabled")?.toBooleanStrictOrNull() ?: true
+    }
+
+    suspend fun getDailyNotificationEnabledSync(): Boolean {
+        return dao.getSettingSync("daily_notification_enabled")?.toBooleanStrictOrNull() ?: true
     }
 
     suspend fun getCardAliasSync(card: String): String? {
