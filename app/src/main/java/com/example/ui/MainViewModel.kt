@@ -9,6 +9,7 @@ import com.example.data.database.SubscriptionDatabase
 import com.example.data.model.CardAliasEntity
 import com.example.data.model.SubscriptionEntity
 import com.example.data.repository.SubscriptionRepository
+import com.example.localization.AppLocaleManager
 import com.example.logic.SubscriptionCalculations
 import com.example.service.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,12 +76,30 @@ class MainViewModel(
     }
 
     init {
-        // Trigger notification check
+        // Trigger notification check and sync per-app locale
         viewModelScope.launch {
             val subs = repository.getAllSubscriptionsSync()
             val cur = repository.getPrimaryCurrencySync()
             val monthly = repository.getMonthlyNotificationEnabledSync()
             NotificationHelper.checkAndSendReminders(getApplication(), subs, cur, monthly)
+
+            val systemLang = AppLocaleManager.getSystemAppLanguage(getApplication())
+            val savedLang = repository.getAppLanguageSync()
+            if (systemLang != null && systemLang != savedLang) {
+                repository.setAppLanguage(systemLang)
+            } else if (savedLang != null) {
+                AppLocaleManager.setSystemAppLanguage(getApplication(), savedLang)
+            }
+        }
+    }
+
+    fun syncLocaleWithSystem() {
+        viewModelScope.launch {
+            val systemLang = AppLocaleManager.getSystemAppLanguage(getApplication())
+            val savedLang = repository.getAppLanguageSync()
+            if (systemLang != null && systemLang != savedLang) {
+                repository.setAppLanguage(systemLang)
+            }
         }
     }
 
@@ -149,6 +168,7 @@ class MainViewModel(
     fun setAppLanguage(lang: String) {
         viewModelScope.launch {
             repository.setAppLanguage(lang)
+            AppLocaleManager.setSystemAppLanguage(getApplication(), lang)
         }
     }
 

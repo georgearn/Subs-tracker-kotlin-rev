@@ -108,4 +108,8 @@ class SubscriptionRepository(private val dao: SubscriptionDao) {
     suspend fun getCardAliasSync(card: String): String? {
         return dao.getCardAliasSync(card)
     }
+
+    suspend fun getAppLanguageSync(): String? {
+        return dao.getSettingSync("app_language")
+    }
 }
