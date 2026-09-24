@@ -1,5 +1,6 @@
 import React from "react";
-import { C, fontFamily } from "../theme";
+import { C, Sub, fontFamily } from "../theme";
+import { Icon } from "./Icons";
 
 // Simple Android phone frame. Inner screen is 390x844 logical px, scaled up.
 export const Phone: React.FC<{
@@ -60,82 +61,79 @@ export const Phone: React.FC<{
   );
 };
 
-const NAV = ["Subs", "Overview", "Analytics", "Settings"];
+const NAV = [
+  { label: "Subs", icon: "list" },
+  { label: "Overview", icon: "calendarMonth" },
+  { label: "Analytics", icon: "pie" },
+  { label: "Settings", icon: "settings" },
+] as const;
 
+// Material 3 NavigationBar as in MainActivity.kt: pill indicator in accent, accent label
 export const NavBar: React.FC<{ active: number }> = ({ active }) => (
-  <div
-    style={{
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 76,
-      background: C.cardBg,
-      display: "flex",
-      justifyContent: "space-around",
-      alignItems: "center",
-      paddingBottom: 8,
-    }}
-  >
-    {NAV.map((n, i) => (
-      <div
-        key={n}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4,
-          color: i === active ? C.text : C.muted,
-          fontSize: 11,
-          fontWeight: 600,
-        }}
-      >
+  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+    <div
+      style={{
+        height: 76,
+        background: C.cardBg,
+        display: "flex",
+        justifyContent: "space-around",
+        alignItems: "center",
+      }}
+    >
+      {NAV.map((n, i) => (
         <div
+          key={n.label}
           style={{
-            width: 56,
-            height: 28,
-            borderRadius: 14,
-            background: i === active ? C.brand : "transparent",
+            width: 80,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            gap: 4,
+            color: i === active ? C.accent : C.muted,
+            fontSize: 12,
+            fontWeight: i === active ? 700 : 500,
           }}
         >
           <div
             style={{
-              width: 16,
-              height: 16,
-              borderRadius: i === 2 ? 8 : 4,
-              border: `2.5px solid ${i === active ? "#fff" : C.muted}`,
+              width: 60,
+              height: 30,
+              borderRadius: 15,
+              background: i === active ? C.accent : "transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
+          >
+            <Icon name={n.icon} size={22} color={i === active ? C.accentOn : C.muted} />
+          </div>
+          {n.label}
         </div>
-        {n}
-      </div>
-    ))}
+      ))}
+    </div>
+    <div style={{ height: 22, background: C.windowBg, display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div style={{ width: 108, height: 4, borderRadius: 2, background: "#fff" }} />
+    </div>
   </div>
 );
 
-export const ServiceIcon: React.FC<{ name: string; color: string; size?: number }> = ({
-  name,
-  color,
-  size = 46,
-}) => (
+export const ServiceIcon: React.FC<{ sub: Sub; size?: number }> = ({ sub, size = 46 }) => (
   <div
     style={{
       width: size,
       height: size,
-      borderRadius: size * 0.28,
-      background: C.cardBgElevated,
+      borderRadius: size * 0.24,
+      background: sub.icon.bg,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      color,
+      color: sub.icon.fg,
       fontWeight: 800,
-      fontSize: size * 0.46,
+      fontSize: size * 0.52,
+      lineHeight: 1,
       flexShrink: 0,
     }}
   >
-    {name[0]}
+    {sub.icon.glyph}
   </div>
 );

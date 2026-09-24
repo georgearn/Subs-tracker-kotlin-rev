@@ -5,18 +5,20 @@ import { staticFile } from "remotion";
 export const fontFamily = "Inter";
 loadFont({ family: fontFamily, url: staticFile("fonts/Inter.woff2"), weight: "100 900" });
 
-// Mirrors app/src/main/java/com/example/theme/Color.kt (dark palette)
+// Dark palette from theme/Color.kt; accent + hero gradient sampled from real app screenshots
 export const C = {
-  brand: "#7359E0",
-  brandDark: "#4D389E",
-  brandLight: "#907BF0",
+  accent: "#ADC9EA",
+  // Marketing chrome (logo, backdrops) derived from the accent
+  brand: "#5F7FA3",
+  brandDark: "#3C546D",
+  brandLight: "#ADC9EA",
+  accentOn: "#EEF4FB",
+  heroGradient: "linear-gradient(115deg, #405D79 0%, #7F9BBB 35%, #A3BFDF 50%, #7F9BBB 65%, #3C546D 100%)",
   windowBg: "#0C0C0F",
   cardBg: "#262630",
   cardBgElevated: "#32323E",
   text: "#F2F2F2",
   muted: "#9E9EAA",
-  green: "#2E9E57",
-  red: "#BD4040",
 };
 
 export const CATEGORY: Record<string, string> = {
@@ -34,20 +36,24 @@ export type Sub = {
   category: keyof typeof CATEGORY;
   freq: string;
   price: number;
-  card?: string;
+  card: string;
   day: number;
-  logo: string;
+  icon: { bg: string; fg: string; glyph: string };
 };
 
+// Service names match the real screenshots; amounts are placeholders (blurred in the originals)
 export const SUBS: Sub[] = [
-  { name: "Netflix", category: "Streaming", freq: "Monthly", price: 15.49, card: "4821", day: 3, logo: "#E50914" },
-  { name: "Spotify", category: "Entertainment", freq: "Monthly", price: 10.99, card: "4821", day: 7, logo: "#1DB954" },
-  { name: "iCloud+", category: "Essentials", freq: "Monthly", price: 2.99, card: "9034", day: 12, logo: "#3693F3" },
-  { name: "Notion", category: "Productivity", freq: "Monthly", price: 10.0, card: "9034", day: 15, logo: "#FFFFFF" },
-  { name: "Duolingo", category: "Quality of Life", freq: "Yearly", price: 7.0, day: 21, logo: "#58CC02" },
-  { name: "ChatGPT", category: "Productivity", freq: "Monthly", price: 20.0, card: "4821", day: 24, logo: "#10A37F" },
-  { name: "Disney+", category: "Streaming", freq: "Monthly", price: 13.99, card: "9034", day: 28, logo: "#113CCF" },
+  { name: "Adobe", category: "Productivity", freq: "Monthly", price: 22.99, card: "7764", day: 19, icon: { bg: "#FA0F00", fg: "#fff", glyph: "A" } },
+  { name: "Amazon", category: "Quality of Life", freq: "Monthly", price: 8.99, card: "5515", day: 30, icon: { bg: "#232F3E", fg: "#FF9900", glyph: "a" } },
+  { name: "Claude", category: "Productivity", freq: "Monthly", price: 20.0, card: "7764", day: 4, icon: { bg: "#D97706", fg: "#fff", glyph: "✳" } },
+  { name: "ESET", category: "Essentials", freq: "Yearly", price: 39.99, card: "6838", day: 25, icon: { bg: "#3A8FC8", fg: "#fff", glyph: "E" } },
+  { name: "Google", category: "Productivity", freq: "Monthly", price: 2.99, card: "3441", day: 10, icon: { bg: "#FFFFFF", fg: "#4285F4", glyph: "G" } },
+  { name: "Netflix", category: "Streaming", freq: "Monthly", price: 15.49, card: "5515", day: 13, icon: { bg: "#141414", fg: "#E50914", glyph: "N" } },
+  { name: "Spotify", category: "Streaming", freq: "Monthly", price: 10.99, card: "3441", day: 18, icon: { bg: "#1ED760", fg: "#0C0C0F", glyph: "≋" } },
+  { name: "Youtube", category: "Streaming", freq: "Monthly", price: 13.99, card: "7764", day: 4, icon: { bg: "#FF0000", fg: "#fff", glyph: "▶" } },
 ];
+
+export const BY_DAY = [...SUBS].sort((a, b) => a.day - b.day);
 
 export const MONTH_TOTAL = SUBS.reduce((a, s) => a + s.price, 0);
 

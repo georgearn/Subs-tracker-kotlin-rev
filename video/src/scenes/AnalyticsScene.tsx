@@ -38,7 +38,7 @@ export const AnalyticsScene: React.FC = () => {
             <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, color: C.muted, padding: 8 }}>
               By card
             </span>
-            <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, background: C.brand, borderRadius: 10, padding: 8 }}>
+            <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, color: "#fff", background: C.accent, borderRadius: 10, padding: 8 }}>
               By category
             </span>
           </div>

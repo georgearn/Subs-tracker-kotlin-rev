@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Easing, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { Backdrop, Headline } from "../components/Headline";
 import { ServiceIcon } from "../components/Phone";
-import { C, fontFamily, clamp } from "../theme";
+import { C, SUBS, fontFamily, clamp } from "../theme";
 
 const FEATURES = [
   { title: "100% offline", body: "Stored locally with Room. No account, no tracking.", color: "#4DA673" },
@@ -41,11 +41,11 @@ export const FeaturesScene: React.FC = () => {
           }),
         }}
       >
-        <ServiceIcon name="Netflix" color="#E50914" size={110} />
+        <ServiceIcon sub={SUBS.find((s) => s.name === "Netflix")!} size={110} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 30, color: C.muted, fontWeight: 500 }}>Subscription Tracker · now</div>
           <div style={{ fontSize: 44, fontWeight: 700, marginTop: 6 }}>Netflix renews tomorrow</div>
-          <div style={{ fontSize: 36, color: C.muted, marginTop: 4 }}>15.49 USD · card •••• 4821</div>
+          <div style={{ fontSize: 36, color: C.muted, marginTop: 4 }}>15.49 USD · card •••• 5515</div>
         </div>
       </Interactive.Div>
       <div
