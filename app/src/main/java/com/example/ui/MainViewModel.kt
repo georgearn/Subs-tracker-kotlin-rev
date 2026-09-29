@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.database.SubscriptionDatabase
-import com.example.data.model.CardAliasEntity
 import com.example.data.model.SubscriptionEntity
 import com.example.data.repository.SubscriptionRepository
 import com.example.localization.AppLocaleManager

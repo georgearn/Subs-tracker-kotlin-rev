@@ -5,14 +5,7 @@ import java.time.LocalDate
 
 enum class AppLanguage(val code: String, val label: String) {
     ENGLISH("en", "English"),
-    RUSSIAN("ru", "Русский");
-
-    companion object {
-        fun fromCode(code: String?): AppLanguage = when (code?.lowercase()) {
-            "ru" -> RUSSIAN
-            else -> ENGLISH
-        }
-    }
+    RUSSIAN("ru", "Русский")
 }
 
 interface AppStrings {

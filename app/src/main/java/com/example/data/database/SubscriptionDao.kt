@@ -19,9 +19,6 @@ interface SubscriptionDao {
     @Query("SELECT * FROM subscriptions ORDER BY name COLLATE NOCASE ASC")
     suspend fun getAllSubscriptionsSync(): List<SubscriptionEntity>
 
-    @Query("SELECT * FROM subscriptions WHERE id = :id")
-    fun getSubscriptionById(id: Int): Flow<SubscriptionEntity?>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubscription(sub: SubscriptionEntity): Long
 
@@ -47,9 +44,6 @@ interface SubscriptionDao {
     // Card Aliases
     @Query("SELECT * FROM card_aliases")
     fun getAllCardAliases(): Flow<List<CardAliasEntity>>
-
-    @Query("SELECT alias FROM card_aliases WHERE card = :card")
-    fun getCardAlias(card: String): Flow<String?>
 
     @Query("SELECT alias FROM card_aliases WHERE card = :card")
     suspend fun getCardAliasSync(card: String): String?
