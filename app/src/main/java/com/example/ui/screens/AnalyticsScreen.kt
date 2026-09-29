@@ -305,7 +305,7 @@ fun AnalyticsScreen(
                 map.map { (cat, amount) ->
                     val pct = if (totalAnnualSpend > 0) (amount / totalAnnualSpend).toFloat() else 0f
                     CategorySpend(cat, amount, pct)
-                }.sortedByDescending { it.annualAmount }
+                }.filter { it.annualAmount > 0 }.sortedByDescending { it.annualAmount }
             }
 
             LazyColumn(
@@ -315,7 +315,7 @@ fun AnalyticsScreen(
             ) {
                 item {
                     ArcGauge(
-                        categorySpends = categorySpends.filter { it.annualAmount > 0 },
+                        categorySpends = categorySpends,
                         totalSpend = totalAnnualSpend,
                         primaryCurrency = primaryCurrency
                     )
@@ -332,7 +332,8 @@ fun AnalyticsScreen(
                 items(categorySpends) { catSpend ->
                     CategoryBarItem(
                         categorySpend = catSpend,
-                        primaryCurrency = primaryCurrency
+                        primaryCurrency = primaryCurrency,
+                        subscriptions = subscriptions.filter { (it.category ?: "Other") == catSpend.category }
                     )
                 }
             }

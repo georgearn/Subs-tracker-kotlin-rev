@@ -9,11 +9,9 @@ val DefaultBrand = Color(0xFF7359E0)
 val DefaultBrandDark = Color(0xFF4D389E)
 val DefaultBrandLight = Color(0xFF907BF0)
 
-val DefaultTotalBg = Color(0xFF4D4D57)
 val GreenSuccess = Color(0xFF2E9E57)
 val BlueAccent = Color(0xFF3373B2)
 val RedAlert = Color(0xFFBD4040)
-val NeutralBg = Color(0xFF3D3D4A)
 
 // Dark Palette
 val DarkWindowBg = Color(0xFF0C0C0F)
@@ -28,13 +26,11 @@ val LightCardBg = Color(0xFFFFFFFF)
 val LightCardBgElevated = Color(0xFFECEFF5)
 val LightTextWhite = Color(0xFF191C24)
 val LightTextMuted = Color(0xFF6E7280)
-val LightTotalBg = Color(0xFFD6D9E3)
 
 // Dynamic theme accessors
 val Brand: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.brand
 val BrandDark: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.brandDark
 val BrandLight: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.brandLight
-val TotalBg: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.totalBg
 val WindowBg: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.windowBg
 val CardBg: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.cardBg
 val CardBgElevated: Color @Composable @ReadOnlyComposable get() = AppTheme.colors.cardBgElevated

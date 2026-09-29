@@ -2,8 +2,6 @@ package com.example.localization
 
 import android.app.LocaleManager
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.LocaleList
 import android.provider.Settings
@@ -50,34 +48,6 @@ object AppLocaleManager {
             } catch (e: Exception) {
                 // Ignore fallback
             }
-        }
-    }
-
-    /**
-     * Opens Phone Settings -> Apps -> Subscription Tracker -> Language (App Language) directly.
-     */
-    fun openSystemAppLanguageSettings(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            try {
-                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                return
-            } catch (e: Exception) {
-                // Fallback to application details
-            }
-        }
-
-        try {
-            val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", context.packageName, null)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(fallbackIntent)
-        } catch (_: Exception) {
-            // Cannot open settings
         }
     }
 }
