@@ -332,7 +332,8 @@ fun AnalyticsScreen(
                 items(categorySpends) { catSpend ->
                     CategoryBarItem(
                         categorySpend = catSpend,
-                        primaryCurrency = primaryCurrency
+                        primaryCurrency = primaryCurrency,
+                        subscriptions = subscriptions.filter { (it.category ?: "Other") == catSpend.category }
                     )
                 }
             }
