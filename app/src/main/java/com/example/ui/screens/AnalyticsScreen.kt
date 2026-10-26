@@ -43,13 +43,13 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.CATEGORIES
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
+import com.example.ui.glass.glassSurface
 import com.example.ui.glass.LocalBottomBarInset
 import com.example.logic.SubscriptionCalculations
 import com.example.theme.Brand
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
-import com.example.theme.WindowBg
 import com.example.ui.components.ArcGauge
 import com.example.ui.components.BankCardVisual
 import com.example.ui.components.CategoryBarItem
@@ -93,7 +93,6 @@ fun AnalyticsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(WindowBg)
             .padding(horizontal = 16.dp)
             .testTag("analytics_screen")
     ) {
@@ -115,8 +114,8 @@ fun AnalyticsScreen(
             // Segmented pill: By Card | By Category
             Row(
                 modifier = Modifier
+                    .glassSurface(RoundedCornerShape(12.dp), CardBgElevated)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(CardBgElevated)
                     .padding(3.dp)
             ) {
                 Box(

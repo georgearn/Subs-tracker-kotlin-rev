@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
+import com.example.ui.glass.glassSurface
 import com.example.theme.CardBg
 import com.example.theme.TextWhite
 import com.example.theme.getCategoryColor
@@ -43,8 +44,8 @@ fun MonthSubCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .glassSurface(RoundedCornerShape(16.dp), CardBg)
             .clip(RoundedCornerShape(16.dp))
-            .background(CardBg)
             .clickable { onClick() }
             .padding(12.dp)
             .testTag("month_sub_card_${subscription.id}_${dueDate.dayOfMonth}")

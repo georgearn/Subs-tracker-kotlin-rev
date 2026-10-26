@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.glass.glassSurface
 import com.example.theme.CardBg
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
@@ -52,8 +53,8 @@ fun CategoryBarItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .glassSurface(RoundedCornerShape(16.dp), CardBg)
             .clip(RoundedCornerShape(16.dp))
-            .background(CardBg)
             .clickable(enabled = subscriptions.isNotEmpty()) { expanded = !expanded }
             .padding(14.dp)
             .testTag("category_bar_${categorySpend.category}")

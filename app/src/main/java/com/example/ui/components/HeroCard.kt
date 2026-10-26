@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.localization.LocalStrings
+import com.example.ui.glass.glassSurface
 import com.example.theme.Brand
 import com.example.theme.BrandDark
 
@@ -37,13 +38,14 @@ fun HeroCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .glassSurface(RoundedCornerShape(20.dp), BrandDark)
             .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        BrandDark,
-                        Brand,
-                        BrandDark.copy(alpha = 0.85f)
+                        BrandDark.copy(alpha = 0.78f),
+                        Brand.copy(alpha = 0.78f),
+                        BrandDark.copy(alpha = 0.66f)
                     )
                 )
             )
