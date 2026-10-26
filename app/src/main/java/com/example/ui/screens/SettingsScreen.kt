@@ -73,13 +73,13 @@ import com.example.data.model.ALL_CURRENCIES
 import com.example.data.settings.ThemeMode
 import com.example.localization.LocalStrings
 import com.example.ui.glass.LocalBottomBarInset
+import com.example.ui.glass.glassSurface
 import com.example.theme.Brand
 import com.example.theme.BrandLight
 import com.example.theme.CardBg
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
-import com.example.theme.WindowBg
 
 @Composable
 fun SettingsScreen(
@@ -122,7 +122,6 @@ fun SettingsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(WindowBg)
             .padding(horizontal = 16.dp)
             .testTag("settings_screen")
     ) {
@@ -155,9 +154,9 @@ fun SettingsScreen(
                 var languageExpanded by remember { mutableStateOf(false) }
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().glassSurface(RoundedCornerShape(16.dp), CardBg),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Row(
                         modifier = Modifier
@@ -292,9 +291,9 @@ fun SettingsScreen(
 
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().glassSurface(RoundedCornerShape(18.dp), CardBg),
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -400,9 +399,9 @@ fun SettingsScreen(
                 val currInfo = ALL_CURRENCIES.find { it.code == primaryCurrency }
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().glassSurface(RoundedCornerShape(16.dp), CardBg),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Row(
                         modifier = Modifier
@@ -476,9 +475,9 @@ fun SettingsScreen(
             // Daily Payment Reminders Toggle Card
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().glassSurface(RoundedCornerShape(16.dp), CardBg),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -549,9 +548,9 @@ fun SettingsScreen(
             // Monthly Digest Notification Toggle Card
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().glassSurface(RoundedCornerShape(16.dp), CardBg),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -622,9 +621,9 @@ fun SettingsScreen(
 
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().glassSurface(RoundedCornerShape(18.dp), CardBg),
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg)
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(

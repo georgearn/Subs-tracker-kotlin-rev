@@ -34,6 +34,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -53,6 +57,7 @@ import com.example.ui.dialogs.ImportExportDialog
 import com.example.ui.glass.FloatingBarHeight
 import com.example.ui.glass.FloatingBarMargin
 import com.example.ui.glass.LocalBottomBarInset
+import com.example.ui.glass.LocalGlassBackdrop
 import com.example.ui.navigation.AppTab
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.OverviewScreen
@@ -103,6 +108,7 @@ fun MainApp(
     CompositionLocalProvider(
         LocalStrings provides strings,
         LocalGlassDarkTheme provides AppTheme.colors.isDark,
+        LocalGlassBackdrop provides backdrop,
         LocalBottomBarInset provides bottomBarInset
     ) {
         if (showAddDialog || editingSubscription != null) {
@@ -149,6 +155,7 @@ fun MainApp(
                     .glassBackdrop(backdrop)
                     .scrollEdgeEffect(style = ScrollEdgeEffectStyle.Soft, color = WindowBg)
                     .background(WindowBg)
+                    .ambientGlow(AppTheme.colors.brand)
                     .statusBarsPadding()
             ) {
                 when (currentTab) {
@@ -242,4 +249,26 @@ private fun NotificationPermissionEffect() {
         ) == PackageManager.PERMISSION_GRANTED
         if (!granted) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
+}
+
+/** Soft brand-coloured light behind the page, so glass has something to refract. */
+private fun Modifier.ambientGlow(color: Color): Modifier = drawBehind {
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(color.copy(alpha = 0.35f), Color.Transparent),
+            center = Offset(size.width * 0.9f, size.height * 0.12f),
+            radius = size.width * 0.8f
+        ),
+        radius = size.width * 0.8f,
+        center = Offset(size.width * 0.9f, size.height * 0.12f)
+    )
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(color.copy(alpha = 0.25f), Color.Transparent),
+            center = Offset(size.width * 0.05f, size.height * 0.62f),
+            radius = size.width * 0.9f
+        ),
+        radius = size.width * 0.9f,
+        center = Offset(size.width * 0.05f, size.height * 0.62f)
+    )
 }

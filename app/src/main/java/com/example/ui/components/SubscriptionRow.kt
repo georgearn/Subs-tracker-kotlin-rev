@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.SubscriptionEntity
+import com.example.ui.glass.glassSurface
 import com.example.theme.CardBg
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
@@ -38,8 +39,8 @@ fun SubscriptionRow(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .glassSurface(RoundedCornerShape(16.dp), CardBg)
             .clip(RoundedCornerShape(16.dp))
-            .background(CardBg)
             .clickable { onClick() }
             .padding(14.dp)
             .testTag("subscription_row_${subscription.id}")

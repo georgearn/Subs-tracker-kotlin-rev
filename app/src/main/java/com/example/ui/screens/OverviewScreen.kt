@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
+import com.example.ui.glass.glassSurface
 import com.example.ui.glass.LocalBottomBarInset
 import com.example.logic.SubscriptionCalculations
 import com.example.theme.Brand
@@ -50,7 +51,6 @@ import com.example.theme.CardBg
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
-import com.example.theme.WindowBg
 import com.example.ui.components.DayCell
 import com.example.ui.components.MonthSubCard
 import com.example.ui.dialogs.MonthPickerModal
@@ -91,7 +91,6 @@ fun OverviewScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(WindowBg)
             .padding(horizontal = 16.dp)
             .testTag("overview_screen")
     ) {
@@ -113,8 +112,8 @@ fun OverviewScreen(
             // Segmented pill: Monthly | Yearly
             Row(
                 modifier = Modifier
+                    .glassSurface(RoundedCornerShape(12.dp), CardBgElevated)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(CardBgElevated)
                     .padding(3.dp)
             ) {
                 Box(
@@ -240,8 +239,8 @@ private fun MonthlyContentView(
             ) {
                 Row(
                     modifier = Modifier
+                        .glassSurface(RoundedCornerShape(12.dp), CardBgElevated)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(CardBgElevated)
                         .clickable { onOpenMonthPicker() }
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                         .testTag("month_pill_btn"),
@@ -367,8 +366,8 @@ private fun MonthlyContentView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .glassSurface(RoundedCornerShape(16.dp), CardBg)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(CardBg)
                     .padding(16.dp)
             ) {
                 Row(
@@ -455,8 +454,8 @@ private fun YearlyContentView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .glassSurface(RoundedCornerShape(16.dp), CardBgElevated)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(CardBgElevated)
                     .padding(18.dp)
             ) {
                 Row(
@@ -492,8 +491,8 @@ private fun YearlyContentView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .glassSurface(RoundedCornerShape(14.dp), if (isCurrent) CardBgElevated else CardBg)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (isCurrent) CardBgElevated else CardBg)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
