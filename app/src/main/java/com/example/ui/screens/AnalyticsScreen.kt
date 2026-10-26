@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.CATEGORIES
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
+import com.example.ui.glass.LocalBottomBarInset
 import com.example.logic.SubscriptionCalculations
 import com.example.theme.Brand
 import com.example.theme.CardBgElevated
@@ -168,7 +169,7 @@ fun AnalyticsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 100.dp),
+                    contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Card Carousel Controls & Stepper
@@ -310,7 +311,7 @@ fun AnalyticsScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 100.dp),
+                contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {

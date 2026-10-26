@@ -6,8 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.data.database.SubscriptionDatabase
-import com.example.data.repository.SubscriptionRepository
+import com.example.appContainer
 import java.util.concurrent.TimeUnit
 
 class SubscriptionReminderWorker(
@@ -17,19 +16,16 @@ class SubscriptionReminderWorker(
 
     override suspend fun doWork(): Result {
         return try {
-            val db = SubscriptionDatabase.getDatabase(applicationContext)
-            val repository = SubscriptionRepository(db.subscriptionDao())
-            val subscriptions = repository.getAllSubscriptionsSync()
-            val currency = repository.getPrimaryCurrencySync()
-            val monthlyEnabled = repository.getMonthlyNotificationEnabledSync()
-            val dailyEnabled = repository.getDailyNotificationEnabledSync()
+            val container = applicationContext.appContainer
+            val subscriptions = container.subscriptionRepository.getAllSubscriptionsSync()
+            val settings = container.settingsRepository.current()
 
             NotificationHelper.checkAndSendReminders(
                 applicationContext,
                 subscriptions,
-                currency,
-                monthlyEnabled,
-                dailyEnabled
+                settings.primaryCurrency,
+                settings.monthlyNotificationEnabled,
+                settings.dailyNotificationEnabled
             )
             Result.success()
         } catch (e: Exception) {

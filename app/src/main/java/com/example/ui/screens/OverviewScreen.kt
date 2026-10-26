@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
+import com.example.ui.glass.LocalBottomBarInset
 import com.example.logic.SubscriptionCalculations
 import com.example.theme.Brand
 import com.example.theme.CardBg
@@ -227,7 +228,7 @@ private fun MonthlyContentView(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 90.dp),
+        contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
@@ -421,7 +422,7 @@ private fun YearlyContentView(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 90.dp),
+        contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {

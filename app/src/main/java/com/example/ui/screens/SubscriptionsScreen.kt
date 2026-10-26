@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
+import com.example.ui.glass.LocalBottomBarInset
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
@@ -94,7 +95,7 @@ fun SubscriptionsScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp),
+            contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
