@@ -41,6 +41,9 @@ interface AppStrings {
     fun totalForMonth(monthName: String): String
     fun yearTotal(year: Int): String
     val twelveMonths: String
+    val avgPerMonth: String
+    val peakMonth: String
+    fun nothingDueRemaining(dateStr: String, count: Int): String
     val currentMonthBadge: String
     fun paymentsCount(count: Int): String
     val selectMonthTitle: String
@@ -159,6 +162,9 @@ class EnglishStrings : AppStrings {
     override fun totalForMonth(monthName: String) = "Total for $monthName"
     override fun yearTotal(year: Int) = "Year Total ($year)"
     override val twelveMonths = "12 months"
+    override val avgPerMonth = "Avg / month"
+    override val peakMonth = "Peak"
+    override fun nothingDueRemaining(dateStr: String, count: Int) = "Nothing due on $dateStr · $count left this month"
     override val currentMonthBadge = "Current"
     override fun paymentsCount(count: Int) = "$count ${if (count == 1) "payment" else "payments"}"
     override val selectMonthTitle = "Select Month"
@@ -325,6 +331,9 @@ class RussianStrings : AppStrings {
     override fun totalForMonth(monthName: String) = "Итого за месяц"
     override fun yearTotal(year: Int) = "Итого за $year год"
     override val twelveMonths = "12 месяцев"
+    override val avgPerMonth = "В среднем / мес."
+    override val peakMonth = "Пик"
+    override fun nothingDueRemaining(dateStr: String, count: Int) = "На $dateStr списаний нет · осталось в месяце: $count"
     override val currentMonthBadge = "Текущий"
     override fun paymentsCount(count: Int): String {
         val mod10 = count % 10
