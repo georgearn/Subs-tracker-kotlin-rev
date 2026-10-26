@@ -14,10 +14,10 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.example.data.settings.ThemeMode
 
 data class AppThemeColors(
     val brand: Color,
@@ -54,15 +54,15 @@ object AppTheme {
 
 @Composable
 fun SubscriptionTrackerTheme(
-    themeMode: String = "dark", // "dark", "light", "system"
+    themeMode: ThemeMode = ThemeMode.DARK,
     useMaterialAccent: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val isSystemDark = isSystemInDarkTheme()
-    val isDark = when (themeMode.lowercase()) {
-        "light" -> false
-        "system" -> isSystemDark
-        else -> true
+    val isDark = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemDark
+        ThemeMode.DARK -> true
     }
 
     val context = LocalContext.current
@@ -159,8 +159,6 @@ fun SubscriptionTrackerTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                window.statusBarColor = Color.Transparent.toArgb()
-                window.navigationBarColor = Color.Transparent.toArgb()
                 WindowCompat.getInsetsController(window, view).apply {
                     isAppearanceLightStatusBars = !isDark
                     isAppearanceLightNavigationBars = !isDark

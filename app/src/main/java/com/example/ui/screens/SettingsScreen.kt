@@ -70,7 +70,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.data.model.ALL_CURRENCIES
+import com.example.data.settings.ThemeMode
 import com.example.localization.LocalStrings
+import com.example.ui.glass.LocalBottomBarInset
 import com.example.theme.Brand
 import com.example.theme.BrandLight
 import com.example.theme.CardBg
@@ -81,8 +83,8 @@ import com.example.theme.WindowBg
 
 @Composable
 fun SettingsScreen(
-    currentThemeMode: String,
-    onThemeModeChange: (String) -> Unit,
+    currentThemeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     useMaterialAccent: Boolean,
     onUseMaterialAccentChange: (Boolean) -> Unit,
     primaryCurrency: String,
@@ -141,7 +143,7 @@ fun SettingsScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 90.dp),
+            contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // --- SECTION 1: LANGUAGE & LOCALIZATION ---
@@ -318,22 +320,22 @@ fun SettingsScreen(
                             ThemeOptionCard(
                                 title = strings.darkTheme,
                                 icon = Icons.Default.DarkMode,
-                                selected = currentThemeMode == "dark",
-                                onClick = { onThemeModeChange("dark") },
+                                selected = currentThemeMode == ThemeMode.DARK,
+                                onClick = { onThemeModeChange(ThemeMode.DARK) },
                                 modifier = Modifier.weight(1f)
                             )
                             ThemeOptionCard(
                                 title = strings.lightTheme,
                                 icon = Icons.Default.LightMode,
-                                selected = currentThemeMode == "light",
-                                onClick = { onThemeModeChange("light") },
+                                selected = currentThemeMode == ThemeMode.LIGHT,
+                                onClick = { onThemeModeChange(ThemeMode.LIGHT) },
                                 modifier = Modifier.weight(1f)
                             )
                             ThemeOptionCard(
                                 title = strings.systemTheme,
                                 icon = Icons.Default.SettingsBrightness,
-                                selected = currentThemeMode == "system",
-                                onClick = { onThemeModeChange("system") },
+                                selected = currentThemeMode == ThemeMode.SYSTEM,
+                                onClick = { onThemeModeChange(ThemeMode.SYSTEM) },
                                 modifier = Modifier.weight(1f)
                             )
                         }

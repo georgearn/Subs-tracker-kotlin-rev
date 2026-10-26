@@ -14,71 +14,13 @@ class SubscriptionRepository(private val dao: SubscriptionDao) {
     val allSubscriptions: Flow<List<SubscriptionEntity>> = dao.getAllSubscriptions()
     val allCardAliases: Flow<List<CardAliasEntity>> = dao.getAllCardAliases()
 
-    val allCardColors: Flow<Map<String, String>> = dao.getSetting("card_colors").map { jsonStr ->
-        if (jsonStr.isNullOrBlank()) {
-            emptyMap()
-        } else {
-            try {
-                Json.decodeFromString<Map<String, String>>(jsonStr)
-            } catch (_: Exception) {
-                emptyMap()
-            }
-        }
+    val allCardColors: Flow<Map<String, String>> = dao.getSetting(CARD_COLORS_KEY).map { jsonStr ->
+        decodeColors(jsonStr)
     }
 
     suspend fun setCardColor(card: String, colorHex: String) {
-        val currentJson = dao.getSettingSync("card_colors")
-        val currentMap = if (!currentJson.isNullOrBlank()) {
-            try {
-                Json.decodeFromString<Map<String, String>>(currentJson).toMutableMap()
-            } catch (_: Exception) {
-                mutableMapOf()
-            }
-        } else {
-            mutableMapOf()
-        }
-        currentMap[card] = colorHex
-        dao.setSetting(SettingEntity(key = "card_colors", value = Json.encodeToString(currentMap)))
-    }
-
-    fun getAppLanguage(): Flow<String?> = dao.getSetting("app_language")
-
-    suspend fun setAppLanguage(lang: String) {
-        dao.setSetting(SettingEntity(key = "app_language", value = lang))
-    }
-
-    fun getPrimaryCurrency(): Flow<String?> = dao.getSetting("primary_currency")
-
-    suspend fun setPrimaryCurrency(currency: String) {
-        dao.setSetting(SettingEntity(key = "primary_currency", value = currency))
-    }
-
-    fun getThemeMode(): Flow<String?> = dao.getSetting("theme_mode")
-
-    suspend fun setThemeMode(mode: String) {
-        dao.setSetting(SettingEntity(key = "theme_mode", value = mode))
-    }
-
-    fun getUseMaterialAccent(): Flow<String?> = dao.getSetting("use_material_accent")
-
-    suspend fun setUseMaterialAccent(use: Boolean) {
-        dao.setSetting(SettingEntity(key = "use_material_accent", value = use.toString()))
-    }
-
-    fun getMonthlyNotificationEnabled(): Flow<Boolean> = dao.getSetting("monthly_notification_enabled").map {
-        it?.toBooleanStrictOrNull() ?: true
-    }
-
-    suspend fun setMonthlyNotificationEnabled(enabled: Boolean) {
-        dao.setSetting(SettingEntity(key = "monthly_notification_enabled", value = enabled.toString()))
-    }
-
-    fun getDailyNotificationEnabled(): Flow<Boolean> = dao.getSetting("daily_notification_enabled").map {
-        it?.toBooleanStrictOrNull() ?: true
-    }
-
-    suspend fun setDailyNotificationEnabled(enabled: Boolean) {
-        dao.setSetting(SettingEntity(key = "daily_notification_enabled", value = enabled.toString()))
+        val updated = decodeColors(dao.getSettingSync(CARD_COLORS_KEY)) + (card to colorHex)
+        dao.setSetting(SettingEntity(key = CARD_COLORS_KEY, value = Json.encodeToString(updated)))
     }
 
     suspend fun insertSubscription(subscription: SubscriptionEntity): Long {
@@ -105,23 +47,20 @@ class SubscriptionRepository(private val dao: SubscriptionDao) {
         return dao.getAllSubscriptionsSync()
     }
 
-    suspend fun getPrimaryCurrencySync(): String {
-        return dao.getSettingSync("primary_currency") ?: "USD"
-    }
-
-    suspend fun getMonthlyNotificationEnabledSync(): Boolean {
-        return dao.getSettingSync("monthly_notification_enabled")?.toBooleanStrictOrNull() ?: true
-    }
-
-    suspend fun getDailyNotificationEnabledSync(): Boolean {
-        return dao.getSettingSync("daily_notification_enabled")?.toBooleanStrictOrNull() ?: true
-    }
-
     suspend fun getCardAliasSync(card: String): String? {
         return dao.getCardAliasSync(card)
     }
 
-    suspend fun getAppLanguageSync(): String? {
-        return dao.getSettingSync("app_language")
+    private fun decodeColors(jsonStr: String?): Map<String, String> {
+        if (jsonStr.isNullOrBlank()) return emptyMap()
+        return try {
+            Json.decodeFromString<Map<String, String>>(jsonStr)
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    private companion object {
+        const val CARD_COLORS_KEY = "card_colors"
     }
 }
