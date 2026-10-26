@@ -29,6 +29,8 @@ import com.example.theme.CardBg
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
+import com.example.ui.glass.CardGlass
+import com.example.ui.glass.glassSurface
 import java.time.LocalDate
 
 @Composable
@@ -54,13 +56,15 @@ fun DayCell(
         Modifier.border(1.5.dp, Brand.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
     } else Modifier
 
+    val glass = if (isSelected) CardGlass.tint(Brand.copy(alpha = 0.75f)) else CardGlass
+
     Box(
         modifier = modifier
             .width(52.dp)
             .height(76.dp)
+            .glassSurface(RoundedCornerShape(14.dp), bg, glass)
             .clip(RoundedCornerShape(14.dp))
             .then(borderModifier)
-            .background(bg)
             .clickable { onClick() }
             .padding(vertical = 8.dp)
             .testTag("day_cell_${date.dayOfMonth}"),

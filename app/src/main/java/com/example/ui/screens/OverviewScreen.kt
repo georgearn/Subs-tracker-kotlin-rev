@@ -2,7 +2,6 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import com.example.ui.components.MonthTotal
+import com.example.ui.components.YearSummaryCard
+import com.example.ui.components.MonthTile
+import kotlinx.coroutines.flow.first
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -55,7 +64,6 @@ import com.example.ui.components.DayCell
 import com.example.ui.components.MonthSubCard
 import com.example.ui.dialogs.MonthPickerModal
 import java.time.LocalDate
-import java.time.Month
 import java.time.YearMonth
 
 @Composable
@@ -72,7 +80,7 @@ fun OverviewScreen(
 
     var selectedYear by remember { mutableIntStateOf(today.year) }
     var selectedMonth by remember { mutableIntStateOf(today.monthValue) }
-    var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedDay by remember { mutableStateOf<LocalDate?>(today) }
     var showMonthPicker by remember { mutableStateOf(false) }
 
     if (showMonthPicker) {
@@ -83,7 +91,7 @@ fun OverviewScreen(
             onSelectMonthYear = { y, m ->
                 selectedYear = y
                 selectedMonth = m
-                selectedDay = null
+                selectedDay = defaultDayFor(y, m, today)
             }
         )
     }
@@ -176,11 +184,20 @@ fun OverviewScreen(
                 selectedYear = selectedYear,
                 today = today,
                 onYearChange = { selectedYear = it },
+                onMonthClick = { month ->
+                    selectedMonth = month
+                    selectedDay = defaultDayFor(selectedYear, month, today)
+                    isYearlyView = false
+                },
                 listState = listState
             )
         }
     }
 }
+
+/** Focus on today when its month is shown, otherwise show the whole month. */
+private fun defaultDayFor(year: Int, month: Int, today: LocalDate): LocalDate? =
+    if (year == today.year && month == today.monthValue) today else null
 
 @Composable
 private fun MonthlyContentView(
@@ -215,11 +232,18 @@ private fun MonthlyContentView(
         allOccurrences.groupBy { it.date }
     }
 
-    val displayedOccurrences = if (selectedDay != null) {
+    val dayOccurrences = if (selectedDay != null) {
         allOccurrences.filter { it.date == selectedDay }
     } else {
         allOccurrences
     }
+    // A selected day with nothing due shows what is still left later in the month.
+    val remainingOccurrences = if (selectedDay != null && dayOccurrences.isEmpty()) {
+        allOccurrences.filter { it.date > selectedDay }
+    } else {
+        emptyList()
+    }
+    val displayedOccurrences = dayOccurrences.ifEmpty { remainingOccurrences }
 
     val monthTotal = allOccurrences.sumOf { it.sub.priceUsd }
     val todayOccurrences = allOccurrences.filter { it.date == today }
@@ -272,35 +296,26 @@ private fun MonthlyContentView(
         }
 
         item {
-            // Horizontal Day Strip
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                for (day in 1..daysInMonth) {
-                    val date = LocalDate.of(selectedYear, selectedMonth, day)
-                    val isSelected = selectedDay == date
-                    val isToday = (date == today)
-                    val hasPayments = (occurrencesByDate[date]?.isNotEmpty() == true)
-
-                    DayCell(
-                        date = date,
-                        isSelected = isSelected,
-                        isToday = isToday,
-                        hasPayments = hasPayments,
-                        onClick = { onSelectDay(date) }
-                    )
-                }
-            }
+            DayStrip(
+                year = selectedYear,
+                month = selectedMonth,
+                daysInMonth = daysInMonth,
+                selectedDay = selectedDay,
+                today = today,
+                occurrencesByDate = occurrencesByDate.keys,
+                onSelectDay = onSelectDay
+            )
         }
 
         item {
             // Subtitle for active filter
             val headerText = if (selectedDay != null) {
                 val dateStr = strings.formatDateShort(selectedDay)
-                strings.dueOnHeader(dateStr, displayedOccurrences.size)
+                if (dayOccurrences.isEmpty() && remainingOccurrences.isNotEmpty()) {
+                    strings.nothingDueRemaining(dateStr, remainingOccurrences.size)
+                } else {
+                    strings.dueOnHeader(dateStr, displayedOccurrences.size)
+                }
             } else {
                 strings.allInMonthHeader(monthName, allOccurrences.size)
             }
@@ -394,29 +409,68 @@ private fun MonthlyContentView(
 }
 
 @Composable
+private fun DayStrip(
+    year: Int,
+    month: Int,
+    daysInMonth: Int,
+    selectedDay: LocalDate?,
+    today: LocalDate,
+    occurrencesByDate: Set<LocalDate>,
+    onSelectDay: (LocalDate) -> Unit
+) {
+    val stripState = rememberLazyListState()
+    val density = LocalDensity.current
+
+    // Centre the strip on today (or the first day) whenever the month changes.
+    LaunchedEffect(year, month) {
+        val focusIndex = if (year == today.year && month == today.monthValue) today.dayOfMonth - 1 else 0
+        val viewportWidth = snapshotFlow { stripState.layoutInfo.viewportSize.width }.first { it > 0 }
+        val cellWidth = with(density) { 52.dp.roundToPx() }
+        stripState.animateScrollToItem(focusIndex, scrollOffset = -(viewportWidth - cellWidth) / 2)
+    }
+
+    LazyRow(
+        state = stripState,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(daysInMonth, key = { it }) { index ->
+            val date = LocalDate.of(year, month, index + 1)
+            DayCell(
+                date = date,
+                isSelected = selectedDay == date,
+                isToday = date == today,
+                hasPayments = date in occurrencesByDate,
+                onClick = { onSelectDay(date) }
+            )
+        }
+    }
+}
+
+@Composable
 private fun YearlyContentView(
     subscriptions: List<SubscriptionEntity>,
     primaryCurrency: String,
     selectedYear: Int,
     today: LocalDate,
     onYearChange: (Int) -> Unit,
+    onMonthClick: (Int) -> Unit,
     listState: LazyListState = rememberLazyListState()
 ) {
-    val strings = LocalStrings.current
-    val months = Month.values()
-    var yearTotal = 0.0
-
-    val monthSummaries = months.map { month ->
-        var count = 0
-        var total = 0.0
-        subscriptions.forEach { sub ->
-            val dates = SubscriptionCalculations.occurrencesInMonth(sub, selectedYear, month.value)
-            count += dates.size
-            total += sub.priceUsd * dates.size
+    val totals = remember(subscriptions, selectedYear) {
+        (1..12).map { month ->
+            var count = 0
+            var total = 0.0
+            subscriptions.forEach { sub ->
+                val dates = SubscriptionCalculations.occurrencesInMonth(sub, selectedYear, month)
+                count += dates.size
+                total += sub.priceUsd * dates.size
+            }
+            MonthTotal(month, total, count)
         }
-        yearTotal += total
-        Triple(month, count, total)
     }
+    val maxTotal = totals.maxOf { it.total }
+    val currentMonth = if (selectedYear == today.year) today.monthValue else null
 
     LazyColumn(
         state = listState,
@@ -425,7 +479,6 @@ private fun YearlyContentView(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            // Year Navigation
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -433,108 +486,64 @@ private fun YearlyContentView(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { onYearChange(selectedYear - 1) }) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Prev", tint = TextWhite)
-                }
+                YearStepButton(
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    description = "Prev",
+                    onClick = { onYearChange(selectedYear - 1) }
+                )
                 Text(
                     text = selectedYear.toString(),
                     color = TextWhite,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
-                IconButton(onClick = { onYearChange(selectedYear + 1) }) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next", tint = TextWhite)
-                }
+                YearStepButton(
+                    icon = Icons.AutoMirrored.Filled.ArrowForward,
+                    description = "Next",
+                    onClick = { onYearChange(selectedYear + 1) }
+                )
             }
         }
 
         item {
-            // Year Total Card
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .glassSurface(RoundedCornerShape(16.dp), CardBgElevated)
-                    .clip(RoundedCornerShape(16.dp))
-                    .padding(18.dp)
+            YearSummaryCard(
+                year = selectedYear,
+                totals = totals,
+                currentMonth = currentMonth,
+                currency = primaryCurrency
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        items(totals.chunked(3)) { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(text = strings.yearTotal(selectedYear), color = TextMuted, fontSize = 13.sp)
-                        Text(
-                            text = "${"%.2f".format(yearTotal)} $primaryCurrency",
-                            color = TextWhite,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Text(
-                        text = strings.twelveMonths,
-                        color = Brand,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
+                row.forEach { entry ->
+                    MonthTile(
+                        entry = entry,
+                        maxTotal = maxTotal,
+                        isCurrent = entry.month == currentMonth,
+                        onClick = { onMonthClick(entry.month) },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(6.dp))
         }
+    }
+}
 
-        items(monthSummaries.size) { i ->
-            val (month, count, total) = monthSummaries[i]
-            val isCurrent = (selectedYear == today.year && month.value == today.monthValue)
-            val monthName = strings.getMonthName(month.value, short = false)
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .glassSurface(RoundedCornerShape(14.dp), if (isCurrent) CardBgElevated else CardBg)
-                    .clip(RoundedCornerShape(14.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = monthName,
-                            color = if (isCurrent) Brand else TextWhite,
-                            fontSize = 15.sp,
-                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium
-                        )
-                        if (isCurrent) {
-                            Text(
-                                text = " (${strings.currentMonthBadge})",
-                                color = Brand,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = strings.paymentsCount(count),
-                            color = TextMuted,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = "${"%.2f".format(total)} $primaryCurrency",
-                            color = TextWhite,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
+@Composable
+private fun YearStepButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(40.dp)
+            .glassSurface(CircleShape, CardBgElevated)
+            .clip(CircleShape)
+    ) {
+        Icon(imageVector = icon, contentDescription = description, tint = TextWhite)
     }
 }
