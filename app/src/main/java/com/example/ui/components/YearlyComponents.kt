@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,7 +31,8 @@ import com.example.theme.CardBg
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
-import com.example.ui.glass.CardGlass
+import com.example.ui.glass.flatSurface
+import com.example.ui.glass.glassControl
 import com.example.ui.glass.glassSurface
 
 /** Money spent in one calendar month, for the yearly view. */
@@ -121,12 +125,11 @@ fun MonthTile(
 ) {
     val strings = LocalStrings.current
     val shape = RoundedCornerShape(18.dp)
-    val glass = if (isCurrent) CardGlass.tint(Brand.copy(alpha = 0.2f)) else CardGlass
     val fraction = if (maxTotal > 0.0) (entry.total / maxTotal).toFloat().coerceIn(0f, 1f) else 0f
 
     Column(
         modifier = modifier
-            .glassSurface(shape, CardBg, glass)
+            .flatSurface(shape, if (isCurrent) Brand.copy(alpha = 0.3f) else CardBg)
             .clip(shape)
             .clickable(onClick = onClick)
             .padding(12.dp)
@@ -170,5 +173,31 @@ fun MonthTile(
                     .background(Brand)
             )
         }
+    }
+}
+
+/** Round glass arrow that steps the yearly view one year back or forward. */
+@Composable
+fun YearStepButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(50)
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .glassControl(shape, CardBgElevated)
+            .clip(shape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = TextWhite,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }

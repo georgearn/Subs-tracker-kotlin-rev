@@ -27,6 +27,16 @@ interface AppStrings {
     val emptySubsSubtitle: String
     val importExport: String
     val addSubscription: String
+    val activeTabLabel: String
+    val historyTabLabel: String
+    fun historyCountHeader(count: Int): String
+    val emptyHistoryTitle: String
+    val emptyHistorySubtitle: String
+    fun priceHistoryRange(startStr: String, endStr: String): String
+    val priceIncreasedLabel: String
+    val priceDecreasedLabel: String
+    val priceChangeDateHint: String
+    val cancelledLabel: String
 
     // Overview Screen
     val overviewTitle: String
@@ -122,6 +132,10 @@ interface AppStrings {
     val cancelAction: String
     val deleteAction: String
     val cardAliasLabel: String
+    val quickActionsTitle: String
+    val quickEdit: String
+    val quickDelete: String
+    val swipeHint: String
 
     // Date & Helpers
     fun getMonthName(month: Int, short: Boolean = false): String
@@ -143,12 +157,22 @@ class EnglishStrings : AppStrings {
     override val subscriptionsTitle = "Subscriptions"
     override val thisMonth = "This Month"
     override fun activeCount(count: Int) = "$count active"
-    override fun activeSubscriptionsHeader(count: Int) = "Active Subscriptions ($count)"
+    override fun activeSubscriptionsHeader(count: Int) = "Active Subscriptions"
     override val totalScheduledSubtitle = "Total scheduled payments for the current month"
     override val emptySubsTitle = "Nothing here yet"
     override val emptySubsSubtitle = "Tap the + button to track your first subscription."
     override val importExport = "Import & Export"
     override val addSubscription = "Add Subscription"
+    override val activeTabLabel = "Active"
+    override val historyTabLabel = "History"
+    override fun historyCountHeader(count: Int) = "Price History ($count)"
+    override val emptyHistoryTitle = "No price history yet"
+    override val emptyHistorySubtitle = "When you change a subscription's price, its previous price will appear here."
+    override fun priceHistoryRange(startStr: String, endStr: String) = "$startStr – $endStr"
+    override val priceIncreasedLabel = "Price increased"
+    override val priceDecreasedLabel = "Price decreased"
+    override val priceChangeDateHint = "Move the Start Date below to the date this new price should take effect — otherwise it will apply retroactively."
+    override val cancelledLabel = "Cancelled"
 
     override val overviewTitle = "Overview"
     override val viewMonthly = "Monthly"
@@ -203,7 +227,7 @@ class EnglishStrings : AppStrings {
     override val close = "Close"
     override val notificationsSectionTitle = "Notifications & Reminders"
     override val dailyNotificationTitle = "Daily Payment Reminders"
-    override val dailyNotificationSubtitle = "Notify me on the day subscription payments are due"
+    override val dailyNotificationSubtitle = "Notify me the evening before subscription payments are due"
     override val bgServiceActive = "Background Service Active"
     override val bgServiceSubtitle = "Daily background alerts notify you of upcoming subscription renewals."
     override val monthlyNotificationTitle = "Monthly Summary Notification"
@@ -240,6 +264,10 @@ class EnglishStrings : AppStrings {
     override val cancelAction = "Cancel"
     override val deleteAction = "Delete"
     override val cardAliasLabel = "Card Alias / Name"
+    override val quickActionsTitle = "Subscription Actions"
+    override val quickEdit = "Edit"
+    override val quickDelete = "Delete"
+    override val swipeHint = "Swipe left for quick delete"
 
     private val monthNames = listOf(
         "January", "February", "March", "April", "May", "June",
@@ -302,12 +330,22 @@ class RussianStrings : AppStrings {
         }
         return "$count $word"
     }
-    override fun activeSubscriptionsHeader(count: Int) = "Активные подписки ($count)"
+    override fun activeSubscriptionsHeader(count: Int) = "Активные подписки"
     override val totalScheduledSubtitle = "Запланированные списания за текущий месяц"
     override val emptySubsTitle = "Пока ничего нет"
     override val emptySubsSubtitle = "Нажмите кнопку +, чтобы добавить первую подписку."
     override val importExport = "Импорт и Экспорт"
     override val addSubscription = "Добавить подписку"
+    override val activeTabLabel = "Активные"
+    override val historyTabLabel = "История"
+    override fun historyCountHeader(count: Int) = "История цен ($count)"
+    override val emptyHistoryTitle = "Истории цен пока нет"
+    override val emptyHistorySubtitle = "Когда вы измените цену подписки, её предыдущая цена появится здесь."
+    override fun priceHistoryRange(startStr: String, endStr: String) = "$startStr – $endStr"
+    override val priceIncreasedLabel = "Цена повысилась"
+    override val priceDecreasedLabel = "Цена снизилась"
+    override val priceChangeDateHint = "Измените дату начала ниже на дату, с которой должна действовать новая цена — иначе она применится задним числом."
+    override val cancelledLabel = "Отменена"
 
     override val overviewTitle = "Обзор"
     override val viewMonthly = "По месяцам"
@@ -392,7 +430,7 @@ class RussianStrings : AppStrings {
     override val close = "Закрыть"
     override val notificationsSectionTitle = "Уведомления и напоминания"
     override val dailyNotificationTitle = "Ежедневные напоминания"
-    override val dailyNotificationSubtitle = "Оповещать в день списания платежей по подпискам"
+    override val dailyNotificationSubtitle = "Оповещать вечером перед списанием платежей по подпискам"
     override val bgServiceActive = "Фоновая служба активна"
     override val bgServiceSubtitle = "Ежедневные фоновые оповещения о предстоящих списаниях."
     override val monthlyNotificationTitle = "Ежемесячный дайджест"
@@ -439,6 +477,10 @@ class RussianStrings : AppStrings {
     override val cancelAction = "Отмена"
     override val deleteAction = "Удалить"
     override val cardAliasLabel = "Название карты"
+    override val quickActionsTitle = "Действия с подпиской"
+    override val quickEdit = "Изменить"
+    override val quickDelete = "Удалить"
+    override val swipeHint = "Смахните влево для быстрого удаления"
 
     private val monthNames = listOf(
         "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",

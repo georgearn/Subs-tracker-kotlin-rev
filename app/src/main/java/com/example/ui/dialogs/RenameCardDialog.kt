@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.theme.Brand
 import com.example.theme.CardBg
+import com.example.ui.glass.DialogGlassBorder
+import com.example.ui.glass.dialogGlass
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
@@ -90,6 +92,6 @@ fun RenameCardDialog(
                 Text("Cancel", color = TextMuted)
             }
         },
-        containerColor = CardBg
+        containerColor = CardBg.dialogGlass()
     )
 }

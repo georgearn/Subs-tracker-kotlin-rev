@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -36,6 +38,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -44,8 +47,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
@@ -70,21 +75,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.data.model.ALL_CURRENCIES
-import com.example.data.settings.ThemeMode
+import com.example.localization.AppLocaleManager
 import com.example.localization.LocalStrings
-import com.example.ui.glass.LocalBottomBarInset
-import com.example.ui.glass.glassSurface
 import com.example.theme.Brand
 import com.example.theme.BrandLight
 import com.example.theme.CardBg
+import com.example.ui.glass.DialogGlassBorder
+import com.example.ui.glass.dialogGlass
 import com.example.theme.CardBgElevated
+import com.example.theme.GreenSuccess
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
+import com.example.theme.WindowBg
+import com.example.ui.glass.CardGlass
+import com.example.ui.glass.LocalBottomBarInset
+import com.example.ui.glass.glassSurface
 
 @Composable
 fun SettingsScreen(
-    currentThemeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit,
+    currentThemeMode: String,
+    onThemeModeChange: (String) -> Unit,
     useMaterialAccent: Boolean,
     onUseMaterialAccentChange: (Boolean) -> Unit,
     primaryCurrency: String,
@@ -100,6 +110,7 @@ fun SettingsScreen(
     onMonthlyNotificationChange: (Boolean) -> Unit = {}
 ) {
     val strings = LocalStrings.current
+    val bottomInset = LocalBottomBarInset.current
     val context = LocalContext.current
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var currencySearchQuery by remember { mutableStateOf("") }
@@ -142,7 +153,7 @@ fun SettingsScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
+            contentPadding = PaddingValues(bottom = bottomInset),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // --- SECTION 1: LANGUAGE & LOCALIZATION ---
@@ -319,72 +330,70 @@ fun SettingsScreen(
                             ThemeOptionCard(
                                 title = strings.darkTheme,
                                 icon = Icons.Default.DarkMode,
-                                selected = currentThemeMode == ThemeMode.DARK,
-                                onClick = { onThemeModeChange(ThemeMode.DARK) },
+                                selected = currentThemeMode == "dark",
+                                onClick = { onThemeModeChange("dark") },
                                 modifier = Modifier.weight(1f)
                             )
                             ThemeOptionCard(
                                 title = strings.lightTheme,
                                 icon = Icons.Default.LightMode,
-                                selected = currentThemeMode == ThemeMode.LIGHT,
-                                onClick = { onThemeModeChange(ThemeMode.LIGHT) },
+                                selected = currentThemeMode == "light",
+                                onClick = { onThemeModeChange("light") },
                                 modifier = Modifier.weight(1f)
                             )
                             ThemeOptionCard(
                                 title = strings.systemTheme,
                                 icon = Icons.Default.SettingsBrightness,
-                                selected = currentThemeMode == ThemeMode.SYSTEM,
-                                onClick = { onThemeModeChange(ThemeMode.SYSTEM) },
+                                selected = currentThemeMode == "system",
+                                onClick = { onThemeModeChange("system") },
                                 modifier = Modifier.weight(1f)
                             )
                         }
 
                         // Material You Toggle (Android 12+)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ColorLens,
-                                        contentDescription = null,
-                                        tint = Brand,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = strings.materialYouTitle,
-                                            color = TextWhite,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(
-                                            text = strings.materialYouSubtitle,
-                                            color = TextMuted,
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                }
-
-                                Switch(
-                                    checked = useMaterialAccent,
-                                    onCheckedChange = onUseMaterialAccentChange,
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
-                                        checkedTrackColor = Brand,
-                                        uncheckedThumbColor = TextMuted,
-                                        uncheckedTrackColor = CardBgElevated
-                                    ),
-                                    modifier = Modifier.testTag("material_you_switch")
+                                Icon(
+                                    imageVector = Icons.Default.ColorLens,
+                                    contentDescription = null,
+                                    tint = Brand,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = strings.materialYouTitle,
+                                        color = TextWhite,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = strings.materialYouSubtitle,
+                                        color = TextMuted,
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
+
+                            Switch(
+                                checked = useMaterialAccent,
+                                onCheckedChange = onUseMaterialAccentChange,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Brand,
+                                    uncheckedThumbColor = TextMuted,
+                                    uncheckedTrackColor = CardBgElevated
+                                ),
+                                modifier = Modifier.testTag("material_you_switch")
+                            )
                         }
                     }
                 }
@@ -681,7 +690,7 @@ fun SettingsScreen(
                 showCurrencyDialog = false
                 currencySearchQuery = ""
             },
-            containerColor = CardBg,
+            containerColor = CardBg.dialogGlass(),
             title = {
                 Text(
                     text = strings.selectCurrencyTitle,
@@ -854,8 +863,9 @@ private fun ThemeOptionCard(
 ) {
     Box(
         modifier = modifier
+            // Sits inside an already-glass card, and glass cannot be nested: flat translucent fill.
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) Brand.copy(alpha = 0.15f) else CardBgElevated)
+            .background(if (selected) Brand.copy(alpha = 0.15f) else CardBgElevated.copy(alpha = 0.6f))
             .border(
                 width = if (selected) 1.5.dp else 1.dp,
                 color = if (selected) Brand else Color.Transparent,

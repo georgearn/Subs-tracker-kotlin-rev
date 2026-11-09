@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Subscription Tracker</string>
+    <string name="widget_month_total_label">This Month Total</string>
+    <string name="widget_month_total_description">Total cost of subscriptions due this month.</string>
+    <string name="widget_next_payment_label">Next Payment</string>
+    <string name="widget_next_payment_description">Date and amount of your next subscription payment.</string>
+    <string name="widget_calendar_label">Payments Calendar</string>
+    <string name="widget_calendar_description">Next 4 days with icons for scheduled payments.</string>
+    <string name="widget_analytics_gauge_label">Spending Gauge</string>
+    <string name="widget_analytics_gauge_description">Gauge of this year\'s spend by category.</string>
 </resources>

@@ -32,8 +32,19 @@ object SubscriptionCalculations {
         }
     }
 
+    /** Null when this subscription's price is still active (no cutover has happened). */
+    fun parseEnd(sub: SubscriptionEntity): LocalDate? {
+        val raw = sub.endDate ?: return null
+        return try {
+            LocalDate.parse(raw)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun occurrencesInMonth(sub: SubscriptionEntity, year: Int, month: Int): List<LocalDate> {
         val start = parseStart(sub)
+        val end = parseEnd(sub)
         val freq = sub.frequency.lowercase()
         val occurrences = mutableListOf<LocalDate>()
 
@@ -78,7 +89,27 @@ object SubscriptionCalculations {
                 }
             }
         }
-        return occurrences.sorted()
+        // A closed-out row (price since changed) stops generating occurrences from its
+        // end date onward — that date belongs to the new row that replaced it instead.
+        return occurrences
+            .filter { end == null || it.isBefore(end) }
+            .sorted()
+    }
+
+    /**
+     * The next date on/after [from] this subscription is actually due, following its own
+     * frequency. Used when a price edit needs to know "when does the old price naturally
+     * stop" so the new price can take over exactly then instead of retroactively.
+     */
+    fun nextOccurrenceOnOrAfter(sub: SubscriptionEntity, from: LocalDate): LocalDate {
+        var probe = YearMonth.from(from)
+        repeat(60) { // 5-year safety cap so a malformed subscription can't loop forever
+            val match = occurrencesInMonth(sub, probe.year, probe.monthValue)
+                .firstOrNull { !it.isBefore(from) }
+            if (match != null) return match
+            probe = probe.plusMonths(1)
+        }
+        return from
     }
 
     fun paymentsPerYear(sub: SubscriptionEntity): Double {
@@ -96,6 +127,22 @@ object SubscriptionCalculations {
 
     fun annualCost(sub: SubscriptionEntity): Double {
         return sub.priceUsd * paymentsPerYear(sub)
+    }
+
+    /**
+     * What this subscription actually costs across [year], month by month — unlike
+     * [annualCost] (a flat run-rate that assumes one price forever), this sums real
+     * occurrences per month. When a price change has split a subscription into a closed-out
+     * row and a new active row, each row only contributes the months it was actually in
+     * effect for, so the total automatically blends the old and new price correctly instead
+     * of double-counting or ignoring one of them.
+     */
+    fun currentYearCost(sub: SubscriptionEntity, year: Int = LocalDate.now().year): Double {
+        var total = 0.0
+        for (month in 1..12) {
+            total += occurrencesInMonth(sub, year, month).size * sub.priceUsd
+        }
+        return total
     }
 
     fun exportToJson(subscriptions: List<SubscriptionEntity>, primaryCurrency: String): String {

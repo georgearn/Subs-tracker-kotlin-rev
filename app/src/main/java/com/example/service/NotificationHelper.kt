@@ -37,15 +37,13 @@ object NotificationHelper {
     }
 
     fun createNotificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-                description = "Subscription payment reminders"
-            }
-            val notificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+            description = "Subscription payment reminders"
         }
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     fun checkAndSendReminders(
@@ -78,16 +76,17 @@ object NotificationHelper {
             }
         }
 
-        // 2. Daily payment reminder (if toggle enabled)
+        // 2. Daily payment reminder, evening before payment (if toggle enabled)
         if (dailyEnabled) {
             val dailyKey = "${today}:daily"
             if (!prefs.getBoolean(dailyKey, false)) {
-                val dueToday = subscriptions.filter { sub ->
-                    SubscriptionCalculations.occurrencesInMonth(sub, today.year, today.monthValue)
-                        .contains(today)
+                val tomorrow = today.plusDays(1)
+                val dueTomorrow = subscriptions.filter { sub ->
+                    SubscriptionCalculations.occurrencesInMonth(sub, tomorrow.year, tomorrow.monthValue)
+                        .contains(tomorrow)
                 }
-                if (dueToday.isNotEmpty()) {
-                    sendDailyNotification(context, dueToday, currency)
+                if (dueTomorrow.isNotEmpty()) {
+                    sendDailyNotification(context, dueTomorrow, currency)
                     prefs.edit().putBoolean(dailyKey, true).apply()
                 }
             }
@@ -100,14 +99,14 @@ object NotificationHelper {
         currency: String
     ) {
         val total = dueSubs.sumOf { it.priceUsd }
-        val title = "\uD83D\uDCB3 Payments due today"
+        val title = "\uD83D\uDCB3 Payments due tomorrow"
         val bodyLines = dueSubs.joinToString("\n") { "• ${it.name}  ${"%.2f".format(it.priceUsd)} $currency" }
-        val content = "${"%.2f".format(total)} $currency in payments today\n$bodyLines"
+        val content = "${"%.2f".format(total)} $currency in payments tomorrow\n$bodyLines"
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
-            .setContentText("${dueSubs.size} payments due today (${"%.2f".format(total)} $currency)")
+            .setContentText("${dueSubs.size} payments due tomorrow (${"%.2f".format(total)} $currency)")
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .setContentIntent(getOverviewPendingIntent(context, DAILY_NOTIF_ID))
             .setAutoCancel(true)

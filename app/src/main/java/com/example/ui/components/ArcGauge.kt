@@ -14,22 +14,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
+import com.example.logic.computeGaugeSegments
 import com.example.theme.getCategoryColor
-
-private val GAUGE_WIDTH = 260.dp
-private val GAUGE_HEIGHT = 146.dp
-private val STROKE_WIDTH = 28.dp
-private val SEGMENT_GAP = 6.dp
-private const val MIN_SWEEP = 0.1f
 
 data class CategorySpend(
     val category: String,
@@ -44,54 +39,42 @@ fun ArcGauge(
     primaryCurrency: String,
     modifier: Modifier = Modifier
 ) {
-    val trackColor = CardBgElevated
-
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(180.dp)
             .testTag("arc_gauge"),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.size(GAUGE_WIDTH, GAUGE_HEIGHT)) {
-            val strokeWidth = STROKE_WIDTH.toPx()
-            val radius = (size.width - strokeWidth) / 2f
-            val arcSize = Size(radius * 2f, radius * 2f)
-            val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
-            val style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        Canvas(modifier = Modifier.size(260.dp, 150.dp)) {
+            val strokeWidth = 14.dp.toPx()
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            // A true semicircle needs a *square* bounding box (width == height) — the old
+            // math stretched that box taller than it was wide, which is what made the
+            // dome look squished/oval instead of a clean round arc.
+            val diameter = minOf(canvasWidth, canvasHeight * 2f) - strokeWidth
+            val arcSize = Size(diameter, diameter)
+            val topLeft = Offset((canvasWidth - diameter) / 2f, strokeWidth / 2f)
 
-            // Round caps overhang each sweep by half a stroke; shrink sweeps by that angle.
-            val capDegrees = Math.toDegrees((strokeWidth / 2f / radius).toDouble()).toFloat()
-            val gapDegrees = Math.toDegrees((SEGMENT_GAP.toPx() / radius).toDouble()).toFloat()
-            val trackStart = 180f + capDegrees
-            val trackSweep = 180f - 2f * capDegrees
-
-            drawArc(
-                color = trackColor,
-                startAngle = trackStart,
-                sweepAngle = trackSweep,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = style
-            )
-
-            val visible = categorySpends.filter { it.percentage > 0f }
-            if (totalSpend > 0 && visible.isNotEmpty()) {
-                val drawable = trackSweep - gapDegrees * (visible.size - 1)
-                var currentAngle = trackStart
-                for (item in visible) {
-                    val slice = item.percentage * drawable
+            if (totalSpend > 0 && categorySpends.isNotEmpty()) {
+                val visible = categorySpends.filter { it.percentage * 180f > 1f }
+                val segments = computeGaugeSegments(
+                    percentages = visible.map { it.percentage },
+                    radius = diameter / 2f,
+                    strokeWidth = strokeWidth,
+                    visibleGap = 5.dp.toPx()
+                )
+                visible.zip(segments).forEach { (item, segment) ->
                     drawArc(
                         color = getCategoryColor(item.category),
-                        startAngle = currentAngle,
-                        sweepAngle = slice.coerceAtLeast(MIN_SWEEP),
+                        startAngle = segment.startAngle,
+                        sweepAngle = segment.sweepAngle,
                         useCenter = false,
                         topLeft = topLeft,
                         size = arcSize,
-                        style = style
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
-                    currentAngle += slice + gapDegrees
                 }
             }
         }
@@ -99,7 +82,7 @@ fun ArcGauge(
         // Center Text
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)
+            modifier = Modifier.padding(top = 40.dp)
         ) {
             Text(
                 text = "%.2f %s".format(totalSpend, primaryCurrency),

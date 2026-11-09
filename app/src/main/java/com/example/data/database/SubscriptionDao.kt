@@ -32,9 +32,6 @@ interface SubscriptionDao {
     suspend fun deleteAllSubscriptions()
 
     // Settings
-    @Query("SELECT * FROM settings")
-    fun getAllSettings(): Flow<List<SettingEntity>>
-
     @Query("SELECT value FROM settings WHERE key = :key")
     fun getSetting(key: String): Flow<String?>
 

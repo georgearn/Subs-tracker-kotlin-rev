@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,62 +23,81 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.background
-import com.example.localization.LocalStrings
 import com.example.theme.Brand
+import com.example.theme.CardBg
 import com.example.ui.glass.FloatingBarHeight
-import com.example.ui.navigation.AppTab
+import com.example.ui.glass.themedGlassAppearance
 import io.github.itshedimisawi.vitro.Glass
 import io.github.itshedimisawi.vitro.GlassBackdrop
 import io.github.itshedimisawi.vitro.glassEffect
 import io.github.itshedimisawi.vitro.rememberGlassEffectState
 
+/** Regular glass with a short, soft shadow hugging the bottom edge instead of a wide halo. */
+@Composable
+private fun tightShadowGlass(): Glass = Glass.Regular.copy(
+    appearance = themedGlassAppearance(),
+    blurRadius = 28.dp,
+    shadowRadius = 3.dp,
+    shadowOffset = 2.dp,
+    shadowOpacity = 0.08f
+).dimmed()
+
+data class GlassNavItem(
+    val id: Int,
+    val title: String,
+    val icon: ImageVector,
+    val testTag: String = ""
+)
+
+/** Floating glass tab bar; the selected tab sits on a solid brand pill. */
 @Composable
 fun GlassNavBar(
     backdrop: GlassBackdrop,
-    currentTab: AppTab,
-    onTabSelected: (AppTab) -> Unit,
+    items: List<GlassNavItem>,
+    selectedItemId: Int,
+    onItemSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val strings = LocalStrings.current
     val glassState = rememberGlassEffectState()
 
     Row(
         modifier = modifier
             .height(FloatingBarHeight)
-            .glassEffect(backdrop, Glass.Regular, state = glassState)
+            // Milky tint under the glass so the bar reads frosted rather than see-through.
+            .background(CardBg.copy(alpha = 0.55f), CircleShape)
+            .glassEffect(backdrop, tightShadowGlass(), state = glassState)
             .padding(6.dp)
             .testTag("bottom_nav_bar"),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppTab.entries.forEach { tab ->
-            val selected = tab == currentTab
-            val label = tab.label(strings)
+        items.forEach { item ->
+            val selected = item.id == selectedItemId
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
                     .clip(CircleShape)
                     .background(if (selected) Brand else Color.Transparent)
-                    .selectable(selected = selected, role = Role.Tab, onClick = { onTabSelected(tab) })
-                    .testTag(tab.testTag),
+                    .selectable(selected = selected, role = Role.Tab, onClick = { onItemSelected(item.id) })
+                    .then(if (item.testTag.isNotEmpty()) Modifier.testTag(item.testTag) else Modifier),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 val tint = if (selected) Color.White else glassState.contentColor.copy(alpha = 0.6f)
                 Icon(
-                    imageVector = tab.icon,
-                    contentDescription = label,
+                    imageVector = item.icon,
+                    contentDescription = item.title,
                     tint = tint,
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
-                    text = label,
+                    text = item.title,
                     color = tint,
                     fontSize = 11.sp,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
@@ -103,7 +123,7 @@ fun GlassFab(
             .size(FloatingBarHeight)
             .glassEffect(
                 backdrop = backdrop,
-                glass = Glass.Regular.tint(Brand.copy(alpha = 0.75f)).interactive(),
+                glass = tightShadowGlass().tint(Brand.copy(alpha = 0.75f)).interactive(),
                 state = glassState,
                 interactionSource = interactionSource
             )

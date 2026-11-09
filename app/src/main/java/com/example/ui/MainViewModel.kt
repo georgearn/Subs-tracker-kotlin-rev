@@ -1,19 +1,22 @@
 package com.example.ui
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.appContainer
+import com.example.data.database.SubscriptionDatabase
+import com.example.data.model.CardAliasEntity
 import com.example.data.model.SubscriptionEntity
 import com.example.data.repository.SubscriptionRepository
-import com.example.data.settings.SettingsRepository
-import com.example.data.settings.ThemeMode
+import com.example.localization.AppLocaleManager
 import com.example.logic.SubscriptionCalculations
-import com.example.platform.SystemServices
+import com.example.service.NotificationHelper
+import com.example.widget.WidgetUpdater
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -21,134 +24,244 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class MainViewModel(
-    private val subscriptionRepository: SubscriptionRepository,
-    private val settingsRepository: SettingsRepository,
-    private val systemServices: SystemServices
-) : ViewModel() {
+    application: Application,
+    private val repository: SubscriptionRepository
+) : AndroidViewModel(application) {
 
-    val uiState: StateFlow<MainUiState> = combine(
-        subscriptionRepository.allSubscriptions,
-        settingsRepository.settings,
-        subscriptionRepository.allCardAliases.map { list -> list.associate { it.card to it.alias } },
-        subscriptionRepository.allCardColors
-    ) { subscriptions, settings, aliases, colors ->
-        MainUiState(
-            subscriptions = subscriptions,
-            settings = settings,
-            cardAliases = aliases,
-            cardColors = colors,
-            currentMonthTotal = monthTotal(subscriptions)
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainUiState())
+    val subscriptions: StateFlow<List<SubscriptionEntity>> = repository.allSubscriptions
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // A price edit "closes out" the old row (endDate set) and opens a new one — the
+    // Subscriptions list should only show the currently active row for each subscription,
+    // not the frozen historical one. Overview/Analytics still use the full `subscriptions`
+    // list above so past months keep pulling the price that was actually in effect.
+    val activeSubscriptions: StateFlow<List<SubscriptionEntity>> = subscriptions
+        .map { list -> list.filter { it.endDate == null } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // The closed-out rows a price edit leaves behind — each one a past price frozen between
+    // its startDate and endDate. Surfaced in the Subscriptions screen's "History" sub-tab.
+    val historySubscriptions: StateFlow<List<SubscriptionEntity>> = subscriptions
+        .map { list -> list.filter { it.endDate != null }.sortedByDescending { it.endDate } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val primaryCurrency: StateFlow<String> = repository.getPrimaryCurrency()
+        .map { it ?: "USD" }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
+
+    val cardAliases: StateFlow<Map<String, String>> = repository.allCardAliases
+        .map { list -> list.associate { it.card to it.alias } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val currentMonthTotal: StateFlow<Double> = combine(subscriptions, primaryCurrency) { subs, _ ->
+        val now = LocalDate.now()
+        subs.sumOf { sub ->
+            val count = SubscriptionCalculations.occurrencesInMonth(sub, now.year, now.monthValue).size
+            sub.priceUsd * count
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val themeMode: StateFlow<String> = repository.getThemeMode()
+        .map { it ?: "dark" }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "dark")
+
+    val useMaterialAccent: StateFlow<Boolean> = repository.getUseMaterialAccent()
+        .map { it?.toBooleanStrictOrNull() ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val appLanguage: StateFlow<String> = repository.getAppLanguage()
+        .map { it ?: "en" }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
+    val monthlyNotificationEnabled: StateFlow<Boolean> = repository.getMonthlyNotificationEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val dailyNotificationEnabled: StateFlow<Boolean> = repository.getDailyNotificationEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val cardColors: StateFlow<Map<String, String>> = repository.allCardColors
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    private val _targetTab = MutableStateFlow<com.example.AppTab?>(null)
+    val targetTab: StateFlow<com.example.AppTab?> = _targetTab.asStateFlow()
+
+    fun navigateToTab(tab: com.example.AppTab) {
+        _targetTab.value = tab
+    }
+
+    fun onTabNavigated() {
+        _targetTab.value = null
+    }
 
     init {
-        systemServices.scheduleDailyReminder()
+        // Trigger notification check and sync per-app locale
         viewModelScope.launch {
-            val settings = settingsRepository.current()
-            systemServices.sendReminders(
-                subscriptionRepository.getAllSubscriptionsSync(),
-                settings.primaryCurrency,
-                settings.monthlyNotificationEnabled,
-                settings.dailyNotificationEnabled
-            )
-            syncLanguage(applySavedToSystem = true)
+            val subs = repository.getAllSubscriptionsSync()
+            val cur = repository.getPrimaryCurrencySync()
+            val monthly = repository.getMonthlyNotificationEnabledSync()
+            val daily = repository.getDailyNotificationEnabledSync()
+            NotificationHelper.checkAndSendReminders(getApplication(), subs, cur, monthly, daily)
+            WidgetUpdater.updateAll(getApplication())
+
+            val systemLang = AppLocaleManager.getSystemAppLanguage(getApplication())
+            val savedLang = repository.getAppLanguageSync()
+            if (systemLang != null && systemLang != savedLang) {
+                repository.setAppLanguage(systemLang)
+            } else if (savedLang != null) {
+                AppLocaleManager.setSystemAppLanguage(getApplication(), savedLang)
+            }
         }
     }
 
-    /** Pulls a language change made in system settings back into the app. */
     fun syncLocaleWithSystem() {
-        viewModelScope.launch { syncLanguage(applySavedToSystem = false) }
+        viewModelScope.launch {
+            val systemLang = AppLocaleManager.getSystemAppLanguage(getApplication())
+            val savedLang = repository.getAppLanguageSync()
+            if (systemLang != null && systemLang != savedLang) {
+                repository.setAppLanguage(systemLang)
+            }
+        }
     }
 
-    fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            repository.setThemeMode(mode)
+        }
     }
 
     fun setUseMaterialAccent(use: Boolean) {
-        viewModelScope.launch { settingsRepository.setUseMaterialAccent(use) }
+        viewModelScope.launch {
+            repository.setUseMaterialAccent(use)
+        }
     }
 
     fun setMonthlyNotificationEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.setMonthlyNotificationEnabled(enabled) }
+        viewModelScope.launch {
+            repository.setMonthlyNotificationEnabled(enabled)
+        }
     }
 
     fun setDailyNotificationEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.setDailyNotificationEnabled(enabled) }
+        viewModelScope.launch {
+            repository.setDailyNotificationEnabled(enabled)
+        }
+    }
+
+    fun sendTestMonthlyNotification() {
+        viewModelScope.launch {
+            val subs = repository.getAllSubscriptionsSync()
+            val cur = repository.getPrimaryCurrencySync()
+            NotificationHelper.sendTestMonthlyNotification(getApplication(), subs, cur)
+        }
+    }
+
+    fun sendTestNotification() {
+        viewModelScope.launch {
+            val subs = repository.getAllSubscriptionsSync()
+            val cur = repository.getPrimaryCurrencySync()
+            NotificationHelper.sendTestNotification(getApplication(), subs, cur)
+        }
     }
 
     fun setPrimaryCurrency(currency: String) {
-        viewModelScope.launch { settingsRepository.setPrimaryCurrency(currency) }
-    }
-
-    fun setAppLanguage(lang: String) {
         viewModelScope.launch {
-            settingsRepository.setLanguage(lang)
-            systemServices.applyLanguage(lang)
+            repository.setPrimaryCurrency(currency)
+            WidgetUpdater.updateAll(getApplication())
         }
     }
 
     fun saveSubscription(subscription: SubscriptionEntity) {
         viewModelScope.launch {
             if (subscription.id == 0) {
-                subscriptionRepository.insertSubscription(subscription)
+                repository.insertSubscription(subscription)
             } else {
-                subscriptionRepository.updateSubscription(subscription)
+                repository.updateSubscription(subscription)
             }
+            WidgetUpdater.updateAll(getApplication())
+        }
+    }
+
+    /**
+     * Applies a price change by freezing the old row (now carrying an endDate) and
+     * inserting the new one as a separate, currently-active row — rather than overwriting
+     * the price in place, which would silently rewrite every past month's total too.
+     */
+    fun applyPriceChange(closedOutOld: SubscriptionEntity, newSubscription: SubscriptionEntity) {
+        viewModelScope.launch {
+            repository.updateSubscription(closedOutOld)
+            repository.insertSubscription(newSubscription.copy(id = 0))
+            WidgetUpdater.updateAll(getApplication())
         }
     }
 
     fun deleteSubscription(id: Int) {
-        viewModelScope.launch { subscriptionRepository.deleteSubscription(id) }
+        viewModelScope.launch {
+            repository.deleteSubscription(id)
+            WidgetUpdater.updateAll(getApplication())
+        }
+    }
+
+    /**
+     * "Deleting" an active subscription doesn't erase it — it freezes it as of today (the
+     * same endDate mechanism a price change uses) so it drops out of the active list but
+     * survives in the History tab as a cancelled entry. A row that's already frozen (a past
+     * price era, or an already-cancelled one) has nothing left to freeze, so that case falls
+     * back to a real delete.
+     */
+    fun cancelSubscription(sub: SubscriptionEntity) {
+        viewModelScope.launch {
+            if (sub.endDate == null) {
+                repository.updateSubscription(sub.copy(endDate = LocalDate.now().toString()))
+            } else {
+                repository.deleteSubscription(sub.id)
+            }
+            WidgetUpdater.updateAll(getApplication())
+        }
     }
 
     fun setCardAlias(card: String, alias: String) {
-        viewModelScope.launch { subscriptionRepository.setCardAlias(card, alias) }
+        viewModelScope.launch {
+            repository.setCardAlias(card, alias)
+        }
+    }
+
+    fun setAppLanguage(lang: String) {
+        viewModelScope.launch {
+            repository.setAppLanguage(lang)
+            AppLocaleManager.setSystemAppLanguage(getApplication(), lang)
+        }
     }
 
     fun setCardColor(card: String, hex: String) {
-        viewModelScope.launch { subscriptionRepository.setCardColor(card, hex) }
+        viewModelScope.launch {
+            repository.setCardColor(card, hex)
+        }
     }
 
     fun importSubscriptions(currency: String?, newSubs: List<SubscriptionEntity>, replace: Boolean) {
         viewModelScope.launch {
             if (replace) {
-                subscriptionRepository.deleteAllSubscriptions()
+                repository.deleteAllSubscriptions()
             }
             if (!currency.isNullOrBlank()) {
-                settingsRepository.setPrimaryCurrency(currency)
+                repository.setPrimaryCurrency(currency)
             }
             newSubs.forEach { sub ->
-                subscriptionRepository.insertSubscription(sub.copy(id = 0))
+                repository.insertSubscription(sub.copy(id = 0))
             }
-        }
-    }
-
-    private suspend fun syncLanguage(applySavedToSystem: Boolean) {
-        val systemLang = systemServices.systemLanguage()
-        val savedLang = settingsRepository.savedLanguage()
-        if (systemLang != null && systemLang != savedLang) {
-            settingsRepository.setLanguage(systemLang)
-        } else if (applySavedToSystem && savedLang != null) {
-            systemServices.applyLanguage(savedLang)
-        }
-    }
-
-    private fun monthTotal(subscriptions: List<SubscriptionEntity>): Double {
-        val now = LocalDate.now()
-        return subscriptions.sumOf { sub ->
-            sub.priceUsd * SubscriptionCalculations.occurrencesInMonth(sub, now.year, now.monthValue).size
+            WidgetUpdater.updateAll(getApplication())
         }
     }
 
     companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val container = checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]).appContainer
-                MainViewModel(
-                    container.subscriptionRepository,
-                    container.settingsRepository,
-                    container.systemServices
-                )
+        fun provideFactory(application: Application): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val db = SubscriptionDatabase.getDatabase(application)
+                    val repo = SubscriptionRepository(db.subscriptionDao())
+                    return MainViewModel(application, repo) as T
+                }
             }
         }
     }

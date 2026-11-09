@@ -1,11 +1,16 @@
 package com.example.ui.dialogs
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,18 +48,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.content.FileProvider
 import com.example.data.model.SubscriptionEntity
 import com.example.logic.SubscriptionCalculations
 import com.example.theme.Brand
 import com.example.theme.CardBg
+import com.example.ui.glass.DialogGlassBorder
+import com.example.ui.glass.dialogGlass
 import com.example.theme.CardBgElevated
 import com.example.theme.GreenSuccess
 import com.example.theme.RedAlert
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
 import kotlinx.coroutines.launch
-import java.io.File
 import java.time.LocalDate
 
 @Composable
@@ -92,7 +98,8 @@ fun ImportExportDialog(
                 .fillMaxWidth(0.95f)
                 .clip(RoundedCornerShape(24.dp))
                 .testTag("import_export_dialog"),
-            color = CardBg
+            color = CardBg.dialogGlass(),
+            border = DialogGlassBorder
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
@@ -135,7 +142,14 @@ fun ImportExportDialog(
                 Button(
                     onClick = {
                         val json = SubscriptionCalculations.exportToJson(subscriptions, primaryCurrency)
-                        shareBackupFile(context, json)
+                        val savedName = saveBackupToDownloads(context, json)
+                        if (savedName != null) {
+                            statusMessage = "Saved to Downloads as $savedName"
+                            isError = false
+                        } else {
+                            statusMessage = "Failed to save backup to Downloads."
+                            isError = true
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -146,7 +160,7 @@ fun ImportExportDialog(
                 ) {
                     Icon(imageVector = Icons.Default.FileUpload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export & Share JSON", fontWeight = FontWeight.SemiBold)
+                    Text("Export to Downloads", fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -287,28 +301,27 @@ private fun executeImport(
     }
 }
 
-private fun shareBackupFile(context: Context, jsonContent: String) {
-    try {
-        val exportDir = File(context.cacheDir, "exports")
-        exportDir.mkdirs()
-        val filename = "subscriptions_backup_${LocalDate.now()}.json"
-        val file = File(exportDir, filename)
-        file.writeText(jsonContent)
-
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/json"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "Subscription Tracker Backup")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+/**
+ * Writes the backup JSON straight into the device's Downloads folder via MediaStore
+ * so it actually persists there instead of only living in a transient share-sheet
+ * attachment. Returns the saved file name, or null on failure.
+ */
+private fun saveBackupToDownloads(context: Context, jsonContent: String): String? {
+    val filename = "subscriptions_backup_${LocalDate.now()}.json"
+    return try {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
         }
-        context.startActivity(Intent.createChooser(intent, "Share backup JSON"))
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: return null
+        resolver.openOutputStream(uri)?.use { it.write(jsonContent.toByteArray()) }
+            ?: return null
+        filename
     } catch (e: Exception) {
         e.printStackTrace()
+        null
     }
 }

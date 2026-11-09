@@ -36,6 +36,8 @@ import androidx.compose.ui.window.Dialog
 import com.example.localization.LocalStrings
 import com.example.theme.Brand
 import com.example.theme.CardBg
+import com.example.ui.glass.DialogGlassBorder
+import com.example.ui.glass.dialogGlass
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
@@ -57,7 +59,8 @@ fun MonthPickerModal(
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(24.dp))
                 .testTag("month_picker_dialog"),
-            color = CardBg
+            color = CardBg.dialogGlass(),
+            border = DialogGlassBorder
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),

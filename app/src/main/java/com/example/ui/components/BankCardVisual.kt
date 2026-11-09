@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,9 +39,11 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
 import com.example.theme.CardBg
+import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
 import com.example.theme.getMetallicColor
+import com.example.ui.glass.glassSurface
 
 val CardColorPresets = listOf(
     Color(0xFF545761), // Gunmetal
@@ -246,8 +249,8 @@ fun BankCardVisual(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .glassSurface(RoundedCornerShape(16.dp), CardBg)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(CardBg)
                     .padding(14.dp)
             ) {
                 Text(
@@ -300,8 +303,8 @@ fun BankCardVisual(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .glassSurface(RoundedCornerShape(16.dp), CardBg)
                 .clip(RoundedCornerShape(16.dp))
-                .background(CardBg)
                 .padding(16.dp)
         ) {
             Row(

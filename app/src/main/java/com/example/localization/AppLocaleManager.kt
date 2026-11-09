@@ -4,7 +4,6 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
-import android.provider.Settings
 import java.util.Locale
 
 object AppLocaleManager {

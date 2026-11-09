@@ -66,7 +66,11 @@ data class SubscriptionEntity(
     @ColumnInfo(name = "start_date") val startDate: String, // ISO YYYY-MM-DD
     @ColumnInfo(name = "interval_days") val intervalDays: Int? = null,
     val card: String? = null,
-    val category: String? = "Other"
+    val category: String? = "Other",
+    // Set when a price edit "closes out" this row (see AddEditSubscriptionDialog) — it
+    // stops generating occurrences on/after this date but past months still look it up
+    // for what was actually charged. Null means this is the currently active price.
+    @ColumnInfo(name = "end_date", defaultValue = "NULL") val endDate: String? = null
 )
 
 @Entity(tableName = "settings")

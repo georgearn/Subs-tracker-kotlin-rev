@@ -6,7 +6,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.appContainer
+import com.example.data.database.SubscriptionDatabase
+import com.example.data.repository.SubscriptionRepository
 import java.util.concurrent.TimeUnit
 
 class SubscriptionReminderWorker(
@@ -16,16 +17,19 @@ class SubscriptionReminderWorker(
 
     override suspend fun doWork(): Result {
         return try {
-            val container = applicationContext.appContainer
-            val subscriptions = container.subscriptionRepository.getAllSubscriptionsSync()
-            val settings = container.settingsRepository.current()
+            val db = SubscriptionDatabase.getDatabase(applicationContext)
+            val repository = SubscriptionRepository(db.subscriptionDao())
+            val subscriptions = repository.getAllSubscriptionsSync()
+            val currency = repository.getPrimaryCurrencySync()
+            val monthlyEnabled = repository.getMonthlyNotificationEnabledSync()
+            val dailyEnabled = repository.getDailyNotificationEnabledSync()
 
             NotificationHelper.checkAndSendReminders(
                 applicationContext,
                 subscriptions,
-                settings.primaryCurrency,
-                settings.monthlyNotificationEnabled,
-                settings.dailyNotificationEnabled
+                currency,
+                monthlyEnabled,
+                dailyEnabled
             )
             Result.success()
         } catch (e: Exception) {
@@ -39,7 +43,7 @@ class SubscriptionReminderWorker(
 
         fun scheduleDailyReminder(context: Context) {
             val now = java.time.LocalDateTime.now()
-            var targetTime = now.withHour(9).withMinute(0).withSecond(0).withNano(0)
+            var targetTime = now.withHour(20).withMinute(0).withSecond(0).withNano(0)
             if (now.isAfter(targetTime)) {
                 targetTime = targetTime.plusDays(1)
             }

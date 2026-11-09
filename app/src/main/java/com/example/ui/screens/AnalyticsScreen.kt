@@ -43,18 +43,20 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.CATEGORIES
 import com.example.data.model.SubscriptionEntity
 import com.example.localization.LocalStrings
-import com.example.ui.glass.glassSurface
-import com.example.ui.glass.LocalBottomBarInset
 import com.example.logic.SubscriptionCalculations
 import com.example.theme.Brand
 import com.example.theme.CardBgElevated
 import com.example.theme.TextMuted
 import com.example.theme.TextWhite
+import com.example.theme.WindowBg
 import com.example.ui.components.ArcGauge
 import com.example.ui.components.BankCardVisual
 import com.example.ui.components.CategoryBarItem
 import com.example.ui.components.CategorySpend
 import com.example.ui.dialogs.RenameCardDialog
+import com.example.ui.glass.LocalBottomBarInset
+import com.example.ui.glass.glassControl
+import com.example.ui.glass.glassSurface
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,6 +70,7 @@ fun AnalyticsScreen(
     onSaveCardColor: (card: String, hex: String) -> Unit = { _, _ -> }
 ) {
     val strings = LocalStrings.current
+    val bottomInset = LocalBottomBarInset.current
     var isCategoryView by remember { mutableStateOf(false) }
 
     // Cards list (distinct cards from subscriptions + unassigned)
@@ -114,7 +117,7 @@ fun AnalyticsScreen(
             // Segmented pill: By Card | By Category
             Row(
                 modifier = Modifier
-                    .glassSurface(RoundedCornerShape(12.dp), CardBgElevated)
+                    .glassControl(RoundedCornerShape(12.dp), CardBgElevated)
                     .clip(RoundedCornerShape(12.dp))
                     .padding(3.dp)
             ) {
@@ -160,7 +163,7 @@ fun AnalyticsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = 80.dp),
+                        .padding(bottom = bottomInset),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(strings.noCardsOrSubs, color = TextMuted)
@@ -168,7 +171,7 @@ fun AnalyticsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
+                    contentPadding = PaddingValues(bottom = bottomInset),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Card Carousel Controls & Stepper
@@ -260,7 +263,17 @@ fun AnalyticsScreen(
                         ) { page ->
                             val safePage = page.coerceIn(0, cardGroups.size - 1)
                             val (cardNumber, cardSubs) = cardGroups[safePage]
-                            val yearlySpend = cardSubs.sumOf { SubscriptionCalculations.annualCost(it) }
+                            // Collapse a subscription's price-history rows down to one entry —
+                            // otherwise a subscription that had a price change shows its icon
+                            // twice (once per price era) in the linked-subscriptions strip. The
+                            // highest-priced row stands in for the subscription as a whole.
+                            val dedupedSubs = cardSubs
+                                .groupBy { it.name }
+                                .map { (_, group) -> group.maxByOrNull { it.priceUsd }!! }
+                            // Yearly spend here uses only the highest price on record for each
+                            // subscription (not a month-by-month blend of old and new prices) —
+                            // a simple, predictable total for this card.
+                            val yearlySpend = dedupedSubs.sumOf { SubscriptionCalculations.annualCost(it) }
                             val alias = cardAliases[cardNumber]
                             val savedColorHex = cardColors[cardNumber]
                             val customColor = savedColorHex?.let { hex ->
@@ -275,7 +288,7 @@ fun AnalyticsScreen(
                                 cardNumber = cardNumber,
                                 alias = alias,
                                 yearlySpend = yearlySpend,
-                                subscriptions = cardSubs,
+                                subscriptions = dedupedSubs,
                                 primaryCurrency = primaryCurrency,
                                 onRenameClick = { renameCardTarget = cardNumber },
                                 customColor = customColor,
@@ -290,8 +303,10 @@ fun AnalyticsScreen(
             }
         } else {
             // BY CATEGORY VIEW
+            // currentYearCost blends old/new prices for a subscription that changed mid-year
+            // instead of projecting the current price as a flat run-rate for the whole year.
             val totalAnnualSpend = remember(subscriptions) {
-                subscriptions.sumOf { SubscriptionCalculations.annualCost(it) }
+                subscriptions.sumOf { SubscriptionCalculations.currentYearCost(it) }
             }
 
             val categorySpends = remember(subscriptions, totalAnnualSpend) {
@@ -299,18 +314,30 @@ fun AnalyticsScreen(
                 CATEGORIES.forEach { map[it] = 0.0 }
                 subscriptions.forEach { sub ->
                     val cat = sub.category ?: "Other"
-                    val cost = SubscriptionCalculations.annualCost(sub)
+                    val cost = SubscriptionCalculations.currentYearCost(sub)
                     map[cat] = (map[cat] ?: 0.0) + cost
                 }
                 map.map { (cat, amount) ->
                     val pct = if (totalAnnualSpend > 0) (amount / totalAnnualSpend).toFloat() else 0f
                     CategorySpend(cat, amount, pct)
-                }.filter { it.annualAmount > 0 }.sortedByDescending { it.annualAmount }
+                }
+                    // Drop categories with nothing assigned to them — no point listing
+                    // an empty "Random: 0.00 USD" row for a category no subscription uses.
+                    .filter { it.annualAmount > 0 }
+                    .sortedByDescending { it.annualAmount }
             }
+
+            // Price-history rows share a name, so collapse to distinct names per category.
+            val subscriptionNamesByCategory = remember(subscriptions) {
+                subscriptions
+                    .groupBy { it.category ?: "Other" }
+                    .mapValues { (_, subs) -> subs.map { it.name }.distinct() }
+            }
+            var expandedCategory by remember { mutableStateOf<String?>(null) }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = LocalBottomBarInset.current),
+                contentPadding = PaddingValues(bottom = bottomInset),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -329,11 +356,16 @@ fun AnalyticsScreen(
                     )
                 }
 
-                items(categorySpends) { catSpend ->
+                items(categorySpends, key = { it.category }) { catSpend ->
                     CategoryBarItem(
                         categorySpend = catSpend,
                         primaryCurrency = primaryCurrency,
-                        subscriptions = subscriptions.filter { (it.category ?: "Other") == catSpend.category }
+                        subscriptionNames = subscriptionNamesByCategory[catSpend.category].orEmpty(),
+                        expanded = expandedCategory == catSpend.category,
+                        onClick = {
+                            expandedCategory =
+                                if (expandedCategory == catSpend.category) null else catSpend.category
+                        }
                     )
                 }
             }

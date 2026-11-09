@@ -1,7 +1,6 @@
 package com.example.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -17,12 +16,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.example.data.settings.ThemeMode
 
 data class AppThemeColors(
     val brand: Color,
     val brandDark: Color,
     val brandLight: Color,
+    val totalBg: Color,
     val windowBg: Color,
     val cardBg: Color,
     val cardBgElevated: Color,
@@ -36,6 +35,7 @@ val LocalAppThemeColors = staticCompositionLocalOf<AppThemeColors> {
         brand = DefaultBrand,
         brandDark = DefaultBrandDark,
         brandLight = DefaultBrandLight,
+        totalBg = DefaultTotalBg,
         windowBg = DarkWindowBg,
         cardBg = DarkCardBg,
         cardBgElevated = DarkCardBgElevated,
@@ -54,32 +54,23 @@ object AppTheme {
 
 @Composable
 fun SubscriptionTrackerTheme(
-    themeMode: ThemeMode = ThemeMode.DARK,
+    themeMode: String = "dark", // "dark", "light", "system"
     useMaterialAccent: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val isSystemDark = isSystemInDarkTheme()
-    val isDark = when (themeMode) {
-        ThemeMode.LIGHT -> false
-        ThemeMode.SYSTEM -> isSystemDark
-        ThemeMode.DARK -> true
+    val isDark = when (themeMode.lowercase()) {
+        "light" -> false
+        "system" -> isSystemDark
+        else -> true
     }
 
     val context = LocalContext.current
-    val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     // Dynamic brand accents based on Material UI accent toggle
     val (effectiveBrand, effectiveBrandDark, effectiveBrandLight) = if (useMaterialAccent) {
-        if (supportsDynamic) {
-            val dynamic = if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            Triple(dynamic.primary, dynamic.primaryContainer, dynamic.tertiary)
-        } else {
-            if (isDark) {
-                Triple(Color(0xFF6895F8), Color(0xFF1B448C), Color(0xFF92B5FB))
-            } else {
-                Triple(Color(0xFF005AC1), Color(0xFFD8E2FF), Color(0xFF3B7EDB))
-            }
-        }
+        val dynamic = if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        Triple(dynamic.primary, dynamic.primaryContainer, dynamic.tertiary)
     } else {
         Triple(DefaultBrand, DefaultBrandDark, DefaultBrandLight)
     }
@@ -89,6 +80,7 @@ fun SubscriptionTrackerTheme(
             brand = effectiveBrand,
             brandDark = effectiveBrandDark,
             brandLight = effectiveBrandLight,
+            totalBg = DefaultTotalBg,
             windowBg = DarkWindowBg,
             cardBg = DarkCardBg,
             cardBgElevated = DarkCardBgElevated,
@@ -101,6 +93,7 @@ fun SubscriptionTrackerTheme(
             brand = effectiveBrand,
             brandDark = effectiveBrandDark,
             brandLight = effectiveBrandLight,
+            totalBg = LightTotalBg,
             windowBg = LightWindowBg,
             cardBg = LightCardBg,
             cardBgElevated = LightCardBgElevated,
@@ -111,7 +104,7 @@ fun SubscriptionTrackerTheme(
     }
 
     val materialColorScheme = if (isDark) {
-        if (useMaterialAccent && supportsDynamic) {
+        if (useMaterialAccent) {
             dynamicDarkColorScheme(context)
         } else {
             darkColorScheme(
@@ -127,19 +120,21 @@ fun SubscriptionTrackerTheme(
                 onSurface = DarkTextWhite,
                 surfaceVariant = DarkCardBgElevated,
                 onSurfaceVariant = DarkTextMuted,
+                surfaceContainer = DarkCardBg,
+                surfaceContainerHigh = DarkCardBgElevated,
                 error = RedAlert,
                 onError = Color.White
             )
         }
     } else {
-        if (useMaterialAccent && supportsDynamic) {
+        if (useMaterialAccent) {
             dynamicLightColorScheme(context)
         } else {
             lightColorScheme(
                 primary = effectiveBrand,
                 onPrimary = Color.White,
-                primaryContainer = effectiveBrandDark,
-                onPrimaryContainer = LightTextWhite,
+                primaryContainer = Color(0xFFE8DDFF),
+                onPrimaryContainer = DefaultBrandDark,
                 secondary = BlueAccent,
                 onSecondary = Color.White,
                 background = LightWindowBg,
@@ -148,6 +143,8 @@ fun SubscriptionTrackerTheme(
                 onSurface = LightTextWhite,
                 surfaceVariant = LightCardBgElevated,
                 onSurfaceVariant = LightTextMuted,
+                surfaceContainer = LightCardBg,
+                surfaceContainerHigh = LightCardBgElevated,
                 error = RedAlert,
                 onError = Color.White
             )
